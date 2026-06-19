@@ -1,36 +1,73 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Aurelis — Cinematic AI Boutique
 
-## Getting Started
+A cinematic, AI-first, voice-controlled **luxury boutique experience**. The main
+screen is a **3D / 2.5D scene** (React Three Fiber) — a futuristic showroom
+guided by the **Aurelis** AI concierge — with minimal luxury UI overlays on top.
+Not a chatbot, not an ecommerce grid, not a card layout.
 
-First, run the development server:
+> Scene first. UI second. Voice-led. Demo-safe.
+
+## Stack
+
+Next.js 16 · React 19 · TypeScript · React Three Fiber · Three.js ·
+@react-three/drei · @react-three/postprocessing · GSAP · Framer Motion ·
+Zustand · Tailwind CSS · OpenAI Realtime-ready (`gpt-realtime-2`).
+
+## Quick start
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install          # if not already installed
+cp .env.example .env.local   # optional — enables live OpenAI Realtime voice
+npm run dev          # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The app runs with **no configuration**. Without an `OPENAI_API_KEY` it uses a
+graceful browser-speech / text fallback for voice. See
+[`docs/OPENAI_REALTIME_SETUP.md`](docs/OPENAI_REALTIME_SETUP.md).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Scripts: `npm run dev` · `npm run build` · `npm run start`.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## What you'll see
 
-## Learn More
+- **Screen 1 — Boutique Window:** seven categories (Watches, Jewelry, Bags,
+  Fragrances, Accessories, Gifts, Services) float as glass-panelled displays in
+  a 100vh no-scroll scene, with the Aurelis orb present.
+- **Screen 2 — Luminous Atelier:** click a category (or say "show watches") and
+  the camera dollies in; the orb grows central and product options orbit it with
+  hover-bloom interactions.
+- **Voice-first controls:** mic (bottom-center), short captions, a hidden text
+  fallback, a category rail, and demo action buttons.
+- **Demo-safe flows:** Checkout, Booking, Lead capture, and Concierge handoff —
+  real-feeling, zero real backend actions.
 
-To learn more about Next.js, take a look at the following resources:
+## Project structure
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```
+app/                     # Next App Router + /api/realtime-session route
+components/
+  experience/            # AurelisExperience, scenes, camera, transition
+  three/                 # Canvas, orb, panels, products, lights, postprocessing
+  voice/                 # mic, caption, text fallback, status, controller
+  overlays/              # brand, controls, demo-safe flow overlays
+config/                  # categories, options, scenes, motion, agent, intents
+lib/
+  realtime/              # OpenAI Realtime session + client + fallback
+  demo/                  # demo-safe actions, receipts, validation
+  stores/                # Zustand experience store
+types/                   # shared domain types
+public/                  # references, products/<category>, models, textures
+docs/                    # art direction, asset pipeline, demo rules, realtime
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Adding real assets
 
-## Deploy on Vercel
+Drop product cutouts into `public/products/<category>/`, GLB models into
+`public/models/`, and point a `config/*` entry at them. The scene swaps the
+placeholder automatically — see [`docs/ASSET_PIPELINE.md`](docs/ASSET_PIPELINE.md).
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Docs
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- [Art Direction](docs/ART_DIRECTION.md)
+- [Asset Pipeline](docs/ASSET_PIPELINE.md)
+- [Demo-Safe Rules](docs/DEMO_SAFE_RULES.md)
+- [OpenAI Realtime Setup](docs/OPENAI_REALTIME_SETUP.md)
