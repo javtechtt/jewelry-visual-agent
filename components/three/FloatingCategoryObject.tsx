@@ -10,7 +10,6 @@ import type { ThreeEvent } from "@react-three/fiber";
 import { useExperienceStore } from "@/lib/stores/useExperienceStore";
 import type { Category } from "@/types/category";
 import type { Vec3 } from "@/types/experience";
-import ProductDisplayPanel from "./ProductDisplayPanel";
 import ProductObject from "./ProductObject";
 
 interface FloatingCategoryObjectProps {
@@ -49,7 +48,12 @@ export default function FloatingCategoryObject({
     <group position={position} rotation={[0, rotationY, 0]}>
       <Float speed={1.1} rotationIntensity={0.2} floatIntensity={0.5}>
         <group onPointerOver={onOver} onPointerOut={onOut} onClick={onClick}>
-          <ProductDisplayPanel accent={category.accent} active={hovered} />
+          {/* Invisible hit target — keeps the whole category area hoverable /
+              clickable now that the visible glass panel is gone. */}
+          <mesh position={[0, 0.08, 0]}>
+            <planeGeometry args={[1.1, 1.45]} />
+            <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+          </mesh>
           <group position={[0, 0.08, 0.16]}>
             <ProductObject
               shape={category.shape}

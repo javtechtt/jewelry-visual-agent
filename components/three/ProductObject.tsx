@@ -157,10 +157,9 @@ function ModelObject({ src }: { src: string }) {
     const maxDim = Math.max(size.x, size.y, size.z) || 1;
     const s = MODEL_FIT_SIZE / maxDim;
     root.scale.setScalar(s);
-    // Center x/y on the panel, but anchor the model's BACK (min z) to the group
-    // origin so the whole model sits in FRONT of the frosted glass panel rather
-    // than embedded in it — otherwise the translucent glass tints its rear half.
-    root.position.set(-center.x * s, -center.y * s, -box.min.z * s);
+    // Center the model on the group origin so it spins cleanly about its own
+    // center (rather than swinging around an off-center pivot).
+    root.position.set(-center.x * s, -center.y * s, -center.z * s);
     return root;
   }, [scene]);
   return <primitive object={fitted} />;
