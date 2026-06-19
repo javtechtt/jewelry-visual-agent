@@ -21,7 +21,7 @@ import { Float, MeshDistortMaterial, Sparkles } from "@react-three/drei";
 import * as THREE from "three";
 import { useExperienceStore } from "@/lib/stores/useExperienceStore";
 import { AGENT } from "@/config/agent";
-import { SCENES } from "@/config/scenes";
+import { getSceneOrb } from "@/config/scenes";
 
 // Fresnel rim glow — bright at the silhouette edge, transparent through the
 // centre, so the orb reads as a luminous, volumetric presence rather than a
@@ -75,6 +75,7 @@ export default function AgentOrb() {
   const lightRef = useRef<THREE.PointLight>(null);
 
   const scene = useExperienceStore((s) => s.scene);
+  const view = useExperienceStore((s) => s.view);
   const agentState = useExperienceStore((s) => s.agentState);
 
   const targetPos = useMemo(() => new THREE.Vector3(), []);
@@ -107,7 +108,7 @@ export default function AgentOrb() {
 
   useFrame((state, delta) => {
     const t = state.clock.elapsedTime;
-    const def = SCENES[scene].orb;
+    const def = getSceneOrb(scene, view);
     const k = 1 - Math.pow(0.001, delta);
 
     // Smoothly settle into the scene's orb position + scale.
@@ -233,8 +234,9 @@ export default function AgentOrb() {
     }
   });
 
+  const initialOrb = getSceneOrb(scene, view);
   return (
-    <group ref={groupRef} position={SCENES[scene].orb.position} scale={SCENES[scene].orb.scale}>
+    <group ref={groupRef} position={initialOrb.position} scale={initialOrb.scale}>
       <Float speed={1.4} rotationIntensity={0.32} floatIntensity={0.6}>
         <group ref={flareGroupRef}>
           {/* Pearlescent core. */}

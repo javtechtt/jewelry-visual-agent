@@ -687,8 +687,160 @@ button {
   }
 }
 
-@media (max-width: 720px) {
-  .category-rail { max-width: 92vw; }
-  .brand__mark { font-size: 1.2rem; }
-  .controls--left, .controls--right { bottom: 6.2rem; }
+/* ============================================================================
+   RESPONSIVE — mobile & tablet only.
+
+   The base styles above ARE the approved desktop layer and are deliberately
+   left untouched. Everything below is scoped to tablet width and under, uses
+   env(safe-area-inset-*) (a no-op on desktop), and re-flows only the thin DOM
+   overlay layer so it stays readable and tappable on handheld screens. The 3D
+   scene itself adapts via the responsive presets in config/scenes.ts.
+   ========================================================================== */
+
+/* --- Tablet (≤1024px): gentle density + notch-safe edges. Small laptops
+       (≥1025px) keep the desktop overlay exactly. --- */
+@media (max-width: 1024px) {
+  .brand {
+    top: max(1.5rem, env(safe-area-inset-top));
+    left: max(1.5rem, env(safe-area-inset-left));
+  }
+  .status-pill { left: max(1.5rem, env(safe-area-inset-left)); }
+  .text-toggle {
+    top: max(1.5rem, env(safe-area-inset-top));
+    right: max(1.5rem, env(safe-area-inset-right));
+  }
+  .text-panel { right: max(1.5rem, env(safe-area-inset-right)); }
+  .category-rail { max-width: 90vw; }
+  .controls--left { left: max(1.5rem, env(safe-area-inset-left)); }
+  .controls--right { right: max(1.5rem, env(safe-area-inset-right)); }
+  .mic-dock { bottom: max(2rem, calc(env(safe-area-inset-bottom) + 1.25rem)); }
+}
+
+/* --- Phones (≤767px): re-flow the overlay for a single narrow column. --- */
+@media (max-width: 767px) {
+  /* Brand mark — compact, still the anchor. */
+  .brand {
+    top: max(0.9rem, env(safe-area-inset-top));
+    left: max(1rem, env(safe-area-inset-left));
+  }
+  .brand__mark { font-size: 1.15rem; letter-spacing: 0.34em; padding-left: 0.34em; }
+  .brand__tag { font-size: 0.52rem; letter-spacing: 0.24em; }
+
+  /* Connection pill is non-essential chrome on phones — voice state still shows
+     on the mic orb. Hide it to keep the top edge clear. */
+  .status-pill { display: none; }
+
+  /* Larger, thumb-friendly text-command toggle. */
+  .text-toggle {
+    top: max(0.9rem, env(safe-area-inset-top));
+    right: max(1rem, env(safe-area-inset-right));
+    width: 42px;
+    height: 42px;
+  }
+
+  /* Category rail: its own full-width, single-line scroll row beneath the brand
+     so all categories stay reachable without wrapping or cramping. */
+  .category-rail {
+    top: calc(max(0.9rem, env(safe-area-inset-top)) + 3.2rem);
+    left: 0;
+    right: 0;
+    transform: none;
+    max-width: none;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    gap: 0.45rem;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x proximity;
+    padding: 0.1rem max(1rem, env(safe-area-inset-right)) 0.1rem max(1rem, env(safe-area-inset-left));
+  }
+  .category-rail::-webkit-scrollbar { display: none; }
+  .chip {
+    flex: 0 0 auto;
+    scroll-snap-align: center;
+    padding: 0.5rem 0.95rem;
+    font-size: 0.7rem;
+  }
+
+  /* Caption sits clear above the action row. */
+  .caption-dock {
+    bottom: calc(8.6rem + env(safe-area-inset-bottom));
+    width: min(92vw, 460px);
+  }
+  .caption { font-size: 1rem; }
+
+  /* Demo-action CTAs: a centred row floating just above the mic. */
+  .controls--right {
+    left: 0;
+    right: 0;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    bottom: calc(5.4rem + env(safe-area-inset-bottom));
+    padding: 0 max(1rem, env(safe-area-inset-right)) 0 max(1rem, env(safe-area-inset-left));
+  }
+  .action-btn { padding: 0.5rem 0.85rem; font-size: 0.66rem; }
+
+  /* Context cluster (Boutique / Start over): stacked in the bottom-left corner,
+     clear of the centred mic orb. */
+  .controls--left {
+    left: max(1rem, env(safe-area-inset-left));
+    right: auto;
+    bottom: calc(1rem + env(safe-area-inset-bottom));
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.4rem;
+  }
+  .ghost-btn { padding: 0.42rem 0.72rem; font-size: 0.6rem; }
+
+  /* Mic dock — primary control, anchored bottom-centre above the home bar. */
+  .mic-dock { bottom: calc(1rem + env(safe-area-inset-bottom)); }
+  .mic-button { width: 60px; height: 60px; }
+
+  /* Text-command panel: full-width sheet under the toggle, 16px input to stop
+     iOS zoom-on-focus. */
+  .text-panel {
+    top: calc(max(0.9rem, env(safe-area-inset-top)) + 3.4rem);
+    left: max(0.8rem, env(safe-area-inset-left));
+    right: max(0.8rem, env(safe-area-inset-right));
+    width: auto;
+  }
+  .text-panel__input { font-size: 16px; }
+
+  /* Demo overlays: full-bleed within safe areas, svh-bounded, 16px inputs. */
+  .demo-backdrop {
+    padding:
+      max(1rem, env(safe-area-inset-top))
+      max(1rem, env(safe-area-inset-right))
+      max(1rem, env(safe-area-inset-bottom))
+      max(1rem, env(safe-area-inset-left));
+  }
+  .demo-panel {
+    width: 100%;
+    max-height: 86svh;
+    padding: 1.3rem;
+    border-radius: 20px;
+  }
+  .demo-input { font-size: 16px; }
+}
+
+/* --- Small phones (≤430px): trim type so the action row stays one line. --- */
+@media (max-width: 430px) {
+  .brand__mark { font-size: 1.05rem; }
+  .action-btn { padding: 0.44rem 0.72rem; font-size: 0.62rem; }
+  .chip { padding: 0.46rem 0.85rem; font-size: 0.66rem; }
+  .caption { font-size: 0.94rem; }
+  .demo-panel__title { font-size: 1.4rem; }
+}
+
+/* --- Short / landscape phones: compress the bottom stack so it doesn't crowd
+       the limited height. --- */
+@media (max-height: 460px) and (max-width: 1024px) {
+  .mic-button { width: 50px; height: 50px; }
+  .mic-dock__hint { display: none; }
+  .mic-dock { bottom: calc(0.6rem + env(safe-area-inset-bottom)); }
+  .caption-dock { bottom: calc(5rem + env(safe-area-inset-bottom)); }
+  .controls--right { bottom: calc(3.4rem + env(safe-area-inset-bottom)); }
+  .controls--left { bottom: calc(0.6rem + env(safe-area-inset-bottom)); }
 }

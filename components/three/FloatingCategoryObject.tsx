@@ -16,12 +16,21 @@ interface FloatingCategoryObjectProps {
   category: Category;
   position: Vec3;
   rotationY?: number;
+  /** Visual product scale — defaults to the desktop value (1). */
+  objectScale?: number;
+  /** Hit-target scale — defaults to the desktop value (1). */
+  hitScale?: number;
+  /** Label vertical offset — defaults to the desktop value. */
+  labelY?: number;
 }
 
 export default function FloatingCategoryObject({
   category,
   position,
   rotationY = 0,
+  objectScale = 1,
+  hitScale = 1,
+  labelY = -0.95,
 }: FloatingCategoryObjectProps) {
   const [hovered, setHovered] = useState(false);
   const enterCategory = useExperienceStore((s) => s.enterCategory);
@@ -49,12 +58,13 @@ export default function FloatingCategoryObject({
       <Float speed={1.1} rotationIntensity={0.2} floatIntensity={0.5}>
         <group onPointerOver={onOver} onPointerOut={onOut} onClick={onClick}>
           {/* Invisible hit target — keeps the whole category area hoverable /
-              clickable now that the visible glass panel is gone. */}
+              clickable now that the visible glass panel is gone. Enlarged on
+              touch (hitScale) for comfortable tapping. */}
           <mesh position={[0, 0.08, 0]}>
-            <planeGeometry args={[1.1, 1.45]} />
+            <planeGeometry args={[1.1 * hitScale, 1.45 * hitScale]} />
             <meshBasicMaterial transparent opacity={0} depthWrite={false} />
           </mesh>
-          <group position={[0, 0.08, 0.16]}>
+          <group position={[0, 0.08, 0.16]} scale={objectScale}>
             <ProductObject
               shape={category.shape}
               accent={category.accent}
@@ -65,7 +75,7 @@ export default function FloatingCategoryObject({
           </group>
           <Html
             center
-            position={[0, -0.95, 0.12]}
+            position={[0, labelY, 0.12]}
             distanceFactor={8}
             zIndexRange={[8, 0]}
             style={{ pointerEvents: "none" }}

@@ -13,10 +13,15 @@ import {
 } from "@react-three/drei";
 import { useExperienceStore } from "@/lib/stores/useExperienceStore";
 import { SCENES } from "@/config/scenes";
+import { QUALITY } from "@/config/responsive";
 
 export default function EnvironmentStage() {
   const scene = useExperienceStore((s) => s.scene);
+  const view = useExperienceStore((s) => s.view);
   const atmosphere = SCENES[scene].atmosphere;
+  // Desktop keeps full-resolution render targets; handheld views trim only the
+  // GPU-heavy reflection + contact-shadow buffers for a smoother framerate.
+  const quality = QUALITY[view];
 
   return (
     <group>
@@ -30,7 +35,7 @@ export default function EnvironmentStage() {
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.9, 0]} receiveShadow>
         <planeGeometry args={[70, 70]} />
         <MeshReflectorMaterial
-          resolution={1024}
+          resolution={quality.reflectorResolution}
           mirror={0.42}
           mixBlur={8}
           mixStrength={1.1}
@@ -56,7 +61,7 @@ export default function EnvironmentStage() {
         scale={28}
         blur={2.8}
         far={6}
-        resolution={1024}
+        resolution={quality.contactShadowResolution}
         color="#7c715c"
       />
 

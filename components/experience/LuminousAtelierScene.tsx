@@ -12,22 +12,23 @@ import * as THREE from "three";
 import { getCategoryOptions } from "@/config/category-options";
 import { CATEGORY_MAP } from "@/config/categories";
 import { useExperienceStore } from "@/lib/stores/useExperienceStore";
+import { ATELIER_LAYOUT } from "@/config/scenes";
 import type { CategoryOption } from "@/types/category";
 import type { Vec3 } from "@/types/experience";
 import AgentOrb from "@/components/three/AgentOrb";
 import ProductDisplayPanel from "@/components/three/ProductDisplayPanel";
 import ProductObject from "@/components/three/ProductObject";
 
-const RING_RADIUS = 2.7;
-
 function AtelierOption({
   option,
   position,
+  scale,
   focused,
   onSelect,
 }: {
   option: CategoryOption;
   position: Vec3;
+  scale: number;
   focused: boolean;
   onSelect: () => void;
 }) {
@@ -51,7 +52,7 @@ function AtelierOption({
   const active = hovered || focused;
 
   return (
-    <group position={position}>
+    <group position={position} scale={scale}>
       <Float speed={1.3} rotationIntensity={0.25} floatIntensity={0.7}>
         <group onPointerOver={onOver} onPointerOut={onOut} onClick={onClick}>
           <ProductDisplayPanel accent={option.accent} active={active} width={0.95} height={1.25} />
@@ -88,6 +89,8 @@ export default function LuminousAtelierScene() {
   const activeCategory = useExperienceStore((s) => s.activeCategory);
   const selectedProduct = useExperienceStore((s) => s.selectedProduct);
   const selectProduct = useExperienceStore((s) => s.selectProduct);
+  const view = useExperienceStore((s) => s.view);
+  const layout = ATELIER_LAYOUT[view];
 
   const options = useMemo(
     () => (activeCategory ? getCategoryOptions(activeCategory) : []),
@@ -106,14 +109,15 @@ export default function LuminousAtelierScene() {
       <group ref={ringRef}>
         {options.map((option, index) => {
           const angle = (index / options.length) * Math.PI * 2 + Math.PI / 2;
-          const x = Math.cos(angle) * RING_RADIUS;
-          const z = Math.sin(angle) * RING_RADIUS - 0.3;
+          const x = Math.cos(angle) * layout.ringRadius;
+          const z = Math.sin(angle) * layout.ringRadius - 0.3;
           const y = 0.45 + Math.sin(angle * 2) * 0.18;
           return (
             <AtelierOption
               key={option.id}
               option={option}
               position={[x, y, z]}
+              scale={layout.optionScale}
               focused={selectedProduct?.id === option.id}
               onSelect={() =>
                 selectProduct({
@@ -128,7 +132,13 @@ export default function LuminousAtelierScene() {
         })}
       </group>
 
-      <Html center position={[0, 2.2, 0]} distanceFactor={9} zIndexRange={[8, 0]} style={{ pointerEvents: "none" }}>
+      <Html
+        center
+        position={[0, layout.titleY, 0]}
+        distanceFactor={layout.titleDistance}
+        zIndexRange={[8, 0]}
+        style={{ pointerEvents: "none" }}
+      >
         <div className="atelier-title">{categoryLabel}</div>
       </Html>
     </group>

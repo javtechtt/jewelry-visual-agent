@@ -15,6 +15,7 @@ import type {
 import type { CategoryId } from "@/types/category";
 import type { CommandId, MatchedIntent, RealtimeStatus } from "@/types/voice";
 import type { DemoReceipt } from "@/types/demo";
+import type { ViewMode } from "@/config/responsive";
 import { AGENT } from "@/config/agent";
 import { CATEGORY_MAP } from "@/config/categories";
 
@@ -28,6 +29,9 @@ export interface ExperienceState {
   activeCategory: CategoryId | null;
   hoveredCategory: CategoryId | null;
   focusedOptionId: string | null;
+
+  // --- responsive view mode (drives the 3D scene presets only) ---
+  view: ViewMode;
 
   // --- agent + voice ---
   agentState: AgentState;
@@ -43,6 +47,7 @@ export interface ExperienceState {
 
   // --- primitive setters ---
   setScene: (scene: SceneId) => void;
+  setView: (view: ViewMode) => void;
   setHoveredCategory: (id: CategoryId | null) => void;
   setFocusedOption: (id: string | null) => void;
   setAgentState: (state: AgentState) => void;
@@ -69,6 +74,7 @@ export interface ExperienceState {
 
 const INITIAL = {
   scene: "boutique-window" as SceneId,
+  view: "desktop" as ViewMode,
   activeCategory: null as CategoryId | null,
   hoveredCategory: null as CategoryId | null,
   focusedOptionId: null as string | null,
@@ -86,6 +92,7 @@ export const useExperienceStore = create<ExperienceState>((set, get) => ({
   ...INITIAL,
 
   setScene: (scene) => set({ scene }),
+  setView: (view) => set({ view }),
   setHoveredCategory: (hoveredCategory) => set({ hoveredCategory }),
   setFocusedOption: (focusedOptionId) => set({ focusedOptionId }),
   setAgentState: (agentState) => set({ agentState }),
@@ -154,7 +161,9 @@ export const useExperienceStore = create<ExperienceState>((set, get) => ({
 
   startOver: () => {
     if (speakTimer) clearTimeout(speakTimer);
-    set({ ...INITIAL, caption: AGENT.lines.reset });
+    // Preserve the live responsive view — it's a device characteristic, not
+    // experience state, so a reset must not snap mobile back to the desktop preset.
+    set({ ...INITIAL, view: get().view, caption: AGENT.lines.reset });
     get().speak(AGENT.lines.reset);
   },
 

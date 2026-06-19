@@ -31,6 +31,9 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
+  // Full-bleed under the notch so the cinematic canvas fills the screen; the DOM
+  // overlay layer respects env(safe-area-inset-*). No effect on desktop.
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
