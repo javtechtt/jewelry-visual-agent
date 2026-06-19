@@ -66,18 +66,6 @@ export const CATEGORY_OPTIONS: Record<CategoryId, CategoryOption[]> = {
     { name: "Sculpted Sunglasses", priceLabel: "$620" },
     { name: "Leather Card Holder", priceLabel: "$390" },
   ]),
-  gifts: buildOptions("gifts", [
-    { name: "Signature Gift Suite", priceLabel: "$1,200" },
-    { name: "Celebration Coffret", priceLabel: "$740" },
-    { name: "Bespoke Engraving Set", priceLabel: "$980" },
-    { name: "Seasonal Atelier Box", priceLabel: "$520" },
-  ]),
-  services: buildOptions("services", [
-    { name: "Private Appointment", priceLabel: "Complimentary" },
-    { name: "Bespoke Commission", priceLabel: "By consultation" },
-    { name: "Care & Restoration", priceLabel: "From $180" },
-    { name: "Personal Styling", priceLabel: "Complimentary" },
-  ]),
 };
 
 export function getCategoryOptions(categoryId: CategoryId): CategoryOption[] {

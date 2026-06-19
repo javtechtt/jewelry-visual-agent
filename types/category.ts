@@ -7,9 +7,7 @@ export type CategoryId =
   | "jewelry"
   | "bags"
   | "fragrances"
-  | "accessories"
-  | "gifts"
-  | "services";
+  | "accessories";
 
 /**
  * Shape hint for the placeholder product mesh rendered by ProductObject.
@@ -22,9 +20,7 @@ export type ProductShape =
   | "ring"
   | "bag"
   | "bottle"
-  | "accessory"
-  | "giftbox"
-  | "concierge";
+  | "accessory";
 
 /** Light-premium accent palette used for glow, rim light and panel tint. */
 export interface CategoryAccent {

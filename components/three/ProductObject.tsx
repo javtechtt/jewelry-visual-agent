@@ -7,7 +7,7 @@
 //
 // See docs/ASSET_PIPELINE.md.
 
-import { Suspense, useEffect, useMemo, useRef, type ReactNode } from "react";
+import { Component, Suspense, useEffect, useMemo, useRef, type ReactNode } from "react";
 import { useFrame } from "@react-three/fiber";
 import { useGLTF, useTexture } from "@react-three/drei";
 import * as THREE from "three";
@@ -33,9 +33,7 @@ function materialParams(shape: ProductShape, accent: CategoryAccent) {
     case "bottle":
       return { color: accent.base, metalness: 0.1, roughness: 0.06 };
     case "bag":
-    case "giftbox":
       return { color: accent.base, metalness: 0.25, roughness: 0.32 };
-    case "concierge":
     default:
       return { color: accent.base, metalness: 0.55, roughness: 0.12 };
   }
@@ -99,24 +97,6 @@ function ShapeMesh({ shape, material }: { shape: ProductShape; material: THREE.M
           <torusKnotGeometry args={[0.2, 0.06, 128, 24]} />
         </mesh>
       );
-    case "giftbox":
-      return (
-        <group>
-          <mesh material={material}>
-            <boxGeometry args={[0.46, 0.46, 0.46]} />
-          </mesh>
-          <mesh material={material}>
-            <boxGeometry args={[0.5, 0.1, 0.5]} />
-          </mesh>
-          <mesh material={material}>
-            <boxGeometry args={[0.1, 0.5, 0.5]} />
-          </mesh>
-          <mesh material={material} position={[0, 0.3, 0]}>
-            <octahedronGeometry args={[0.12, 0]} />
-          </mesh>
-        </group>
-      );
-    case "concierge":
     default:
       return (
         <mesh material={material}>
@@ -162,10 +142,42 @@ function CutoutPlane({ src }: { src: string }) {
   );
 }
 
-/** Real GLB/GLTF model. */
+// Real GLB/GLTF models are normalized to this uniform size (largest dimension,
+// world units) so arbitrary exports sit correctly on the panel.
+const MODEL_FIT_SIZE = 1.05;
+
+/** Real GLB/GLTF model — cloned, auto-centered and scaled to fit. */
 function ModelObject({ src }: { src: string }) {
   const { scene } = useGLTF(src);
-  return <primitive object={scene} />;
+  const fitted = useMemo(() => {
+    const root = scene.clone(true);
+    const box = new THREE.Box3().setFromObject(root);
+    const size = box.getSize(new THREE.Vector3());
+    const center = box.getCenter(new THREE.Vector3());
+    const maxDim = Math.max(size.x, size.y, size.z) || 1;
+    const s = MODEL_FIT_SIZE / maxDim;
+    root.scale.setScalar(s);
+    // Center x/y on the panel, but anchor the model's BACK (min z) to the group
+    // origin so the whole model sits in FRONT of the frosted glass panel rather
+    // than embedded in it — otherwise the translucent glass tints its rear half.
+    root.position.set(-center.x * s, -center.y * s, -box.min.z * s);
+    return root;
+  }, [scene]);
+  return <primitive object={fitted} />;
+}
+
+/** If a model fails to load (e.g. network/decoder), show the image/placeholder. */
+class ModelErrorBoundary extends Component<
+  { fallback: ReactNode; children: ReactNode },
+  { failed: boolean }
+> {
+  state = { failed: false };
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+  render() {
+    return this.state.failed ? this.props.fallback : this.props.children;
+  }
 }
 
 export default function ProductObject({
@@ -212,21 +224,27 @@ export default function ProductObject({
     );
   });
 
+  const placeholder = <ShapeMesh shape={shape} material={material} />;
+  const imageOrShape = cutout ? (
+    <Suspense fallback={placeholder}>
+      <CutoutPlane src={cutout} />
+    </Suspense>
+  ) : (
+    placeholder
+  );
+
   let content: ReactNode;
   if (model) {
+    // Prefer the GLB; fall back to the showcase image (then placeholder).
     content = (
-      <Suspense fallback={<ShapeMesh shape={shape} material={material} />}>
-        <ModelObject src={model} />
-      </Suspense>
-    );
-  } else if (cutout) {
-    content = (
-      <Suspense fallback={<ShapeMesh shape={shape} material={material} />}>
-        <CutoutPlane src={cutout} />
-      </Suspense>
+      <ModelErrorBoundary fallback={imageOrShape}>
+        <Suspense fallback={placeholder}>
+          <ModelObject src={model} />
+        </Suspense>
+      </ModelErrorBoundary>
     );
   } else {
-    content = <ShapeMesh shape={shape} material={material} />;
+    content = imageOrShape;
   }
 
   return <group ref={groupRef}>{content}</group>;

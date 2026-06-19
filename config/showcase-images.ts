@@ -27,8 +27,19 @@ export const CATEGORY_SHOWCASE: Record<CategoryId, string> = {
   bags: img("1584917865442-de89df76afd3"),
   fragrances: img("1541643600914-78b084683601"),
   accessories: img("1572635196237-14b3f281503f"),
-  gifts: img("1549465220-1a8b9238cd48"),
-  services: img("1521334884684-d80222895322"),
+};
+
+/**
+ * Real 3D product models per category (public/models/products/<id>.glb),
+ * shown on the Boutique Window panels. Takes priority over the hero image in
+ * ProductObject; the image stays as the fallback if a model fails to load.
+ */
+export const CATEGORY_MODEL: Partial<Record<CategoryId, string>> = {
+  watches: "/models/products/watches.glb",
+  jewelry: "/models/products/jewelry.glb",
+  bags: "/models/products/bags.glb",
+  fragrances: "/models/products/fragrances.glb",
+  accessories: "/models/products/accessories.glb",
 };
 
 /**
@@ -61,14 +72,4 @@ export const OPTION_SHOWCASE: Record<string, string> = {
   "accessories-2": img("1556306535-0f09a537f0a3"),
   "accessories-3": img("1511499767150-a48a237f0083"),
   "accessories-4": img("1572635196237-14b3f281503f"),
-  // Gifts
-  "gifts-1": img("1549465220-1a8b9238cd48"),
-  "gifts-2": img("1607344645866-009c320b63e0"),
-  "gifts-3": img("1513885535751-8b9238bd345a"),
-  "gifts-4": img("1608755728617-aefab37d2edd"),
-  // Services
-  "services-1": img("1521334884684-d80222895322"),
-  "services-2": img("1519125323398-675f0ddb6308"),
-  "services-3": img("1542838132-92c53300491e"),
-  "services-4": img("1519125323398-675f0ddb6308"),
 };

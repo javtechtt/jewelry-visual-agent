@@ -3,7 +3,7 @@
 // voice intents and controls all derive from it.
 
 import type { Category, CategoryId } from "@/types/category";
-import { CATEGORY_SHOWCASE } from "./showcase-images";
+import { CATEGORY_MODEL, CATEGORY_SHOWCASE } from "./showcase-images";
 
 const CATEGORY_BASE: Category[] = [
   {
@@ -41,20 +41,6 @@ const CATEGORY_BASE: Category[] = [
     accent: { base: "#e2dce9", glow: "#ece2f4" },
     shape: "accessory",
   },
-  {
-    id: "gifts",
-    label: "Gifts",
-    tagline: "Occasions, beautifully wrapped.",
-    accent: { base: "#f0d6cf", glow: "#fbe0d6" },
-    shape: "giftbox",
-  },
-  {
-    id: "services",
-    label: "Services",
-    tagline: "Your private concierge atelier.",
-    accent: { base: "#dfe7f0", glow: "#e9f1fb" },
-    shape: "concierge",
-  },
 ];
 
 // Attach the internet showcase hero image to each category. Rendered as a 2.5D
@@ -62,6 +48,7 @@ const CATEGORY_BASE: Category[] = [
 export const CATEGORIES: Category[] = CATEGORY_BASE.map((category) => ({
   ...category,
   cutout: CATEGORY_SHOWCASE[category.id],
+  model: CATEGORY_MODEL[category.id],
 }));
 
 export const CATEGORY_MAP: Record<CategoryId, Category> = CATEGORIES.reduce(
