@@ -5,12 +5,16 @@
 // glow (the ivory environment stays clean), a soft vignette, and AgX tone
 // mapping for refined, non-crushed highlights.
 
-import { Bloom, EffectComposer, ToneMapping, Vignette } from "@react-three/postprocessing";
+import { Bloom, EffectComposer, SMAA, ToneMapping, Vignette } from "@react-three/postprocessing";
 import { ToneMappingMode } from "postprocessing";
 
 export default function PostProcessing() {
+  // multisampling={0} is REQUIRED: MSAA on the composer's render targets emits a
+  // black frame every other render under Windows/ANGLE, blinking the whole page.
+  // SMAA restores edge antialiasing as a post pass (no multisampled target).
   return (
-    <EffectComposer multisampling={4}>
+    <EffectComposer multisampling={0}>
+      <SMAA />
       <Bloom
         intensity={0.92}
         luminanceThreshold={1.0}
