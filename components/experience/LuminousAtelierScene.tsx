@@ -52,19 +52,31 @@ function AtelierOption({
 
   const active = hovered || focused;
 
-  // Spin the case + product together as one display unit, and grow the WHOLE
-  // unit (case included) on hover so the glass scales with the piece.
   const spinRef = useRef<THREE.Group>(null);
+  const rootRef = useRef<THREE.Group>(null);
+  const labelRef = useRef<HTMLDivElement>(null);
+  const worldPos = useMemo(() => new THREE.Vector3(), []);
+
   useFrame((_, delta) => {
-    if (!spinRef.current) return;
-    const k = 1 - Math.pow(0.0015, delta);
-    const target = active ? HOVER.scale : 1;
-    spinRef.current.scale.setScalar(THREE.MathUtils.lerp(spinRef.current.scale.x, target, k));
-    spinRef.current.rotation.y += delta * (active ? 0.5 : 0.18);
+    // Spin the case + product as one unit; grow the whole unit on hover.
+    if (spinRef.current) {
+      const k = 1 - Math.pow(0.0015, delta);
+      const target = active ? HOVER.scale : 1;
+      spinRef.current.scale.setScalar(THREE.MathUtils.lerp(spinRef.current.scale.x, target, k));
+      spinRef.current.rotation.y += delta * (active ? 0.5 : 0.18);
+    }
+    // Show the title only on the FRONT half of the orbit (nearer the camera).
+    // Smoothstep over the orbit depth fades it as the case crosses the sides;
+    // the band is centred on the ring's -0.3 z offset, so front = full, back =
+    // hidden, sides ≈ 50% — across every responsive ring radius.
+    if (rootRef.current && labelRef.current) {
+      rootRef.current.getWorldPosition(worldPos);
+      labelRef.current.style.opacity = String(THREE.MathUtils.smoothstep(worldPos.z, -1.2, 0.6));
+    }
   });
 
   return (
-    <group position={position} scale={scale}>
+    <group ref={rootRef} position={position} scale={scale}>
       <Float speed={1.3} rotationIntensity={0.25} floatIntensity={0.7}>
         <group onPointerOver={onOver} onPointerOut={onOut} onClick={onClick}>
           {/* Case + product rotate together (option #2) so they stay in sync. */}
@@ -92,7 +104,7 @@ function AtelierOption({
             zIndexRange={[8, 0]}
             style={{ pointerEvents: "none" }}
           >
-            <div className={`scene-label${active ? " scene-label--active" : ""}`}>
+            <div ref={labelRef} className={`scene-label${active ? " scene-label--active" : ""}`}>
               <span className="scene-label__name">{option.name}</span>
               <span className="scene-label__hint">{option.priceLabel}</span>
             </div>
@@ -117,8 +129,24 @@ export default function LuminousAtelierScene() {
   );
   const categoryLabel = activeCategory ? CATEGORY_MAP[activeCategory].label : "";
 
+  // Index of the focused option (selected by click or the agent), if any.
+  const focusedIndex = useMemo(
+    () => (selectedProduct ? options.findIndex((o) => o.id === selectedProduct.id) : -1),
+    [selectedProduct, options],
+  );
+
   useFrame((_, delta) => {
-    if (ringRef.current) ringRef.current.rotation.y += delta * 0.06;
+    if (!ringRef.current) return;
+    if (focusedIndex >= 0 && options.length > 0) {
+      // Quickly rotate the focused option to the front of the orbit, then hold
+      // there (shortest angular path). Option i fronts at ring.y = i/n * 2π.
+      const target = (focusedIndex / options.length) * Math.PI * 2;
+      const cur = ringRef.current.rotation.y;
+      const diff = Math.atan2(Math.sin(target - cur), Math.cos(target - cur));
+      ringRef.current.rotation.y = cur + diff * (1 - Math.pow(0.0009, delta));
+    } else {
+      ringRef.current.rotation.y += delta * 0.06;
+    }
   });
 
   return (

@@ -172,13 +172,24 @@ function CutoutPlane({ src }: { src: string }) {
   // Two single-sided faces (front + back of the case) so the image reads from
   // either side and never shows an opaque back. dispose={null} keeps the shared
   // geometry alive across mount/unmount.
+  // Two identical FrontSide planes — one facing each way. Using the SAME
+  // material/side for both means the back face is exactly as clear + vibrant as
+  // the front (BackSide would render it mirrored), and the 180° rotation makes
+  // the rear image read upright rather than flipped. raycast disabled: the image
+  // isn't an occluder and shouldn't intercept pointers or hide labels.
   return (
     <group>
-      <mesh geometry={CUTOUT_GEOMETRY} position={[0, 0, CUTOUT_FACE_OFFSET]} dispose={null}>
+      <mesh geometry={CUTOUT_GEOMETRY} position={[0, 0, CUTOUT_FACE_OFFSET]} dispose={null} raycast={() => null}>
         <meshBasicMaterial map={texture} transparent toneMapped={false} side={THREE.FrontSide} />
       </mesh>
-      <mesh geometry={CUTOUT_GEOMETRY} position={[0, 0, -CUTOUT_FACE_OFFSET]} dispose={null}>
-        <meshBasicMaterial map={texture} transparent toneMapped={false} side={THREE.BackSide} />
+      <mesh
+        geometry={CUTOUT_GEOMETRY}
+        position={[0, 0, -CUTOUT_FACE_OFFSET]}
+        rotation={[0, Math.PI, 0]}
+        dispose={null}
+        raycast={() => null}
+      >
+        <meshBasicMaterial map={texture} transparent toneMapped={false} side={THREE.FrontSide} />
       </mesh>
     </group>
   );

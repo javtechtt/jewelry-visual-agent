@@ -257,12 +257,12 @@ export default function AgentOrb() {
           </mesh>
 
           {/* Fresnel aura shell — glowing silhouette edge. */}
-          <mesh scale={1.16} material={auraMaterial}>
+          <mesh scale={1.16} material={auraMaterial} raycast={() => null}>
             <sphereGeometry args={[0.6, 64, 64]} />
           </mesh>
 
           {/* Inner + outer additive halos. */}
-          <mesh ref={haloInnerRef} scale={1.45}>
+          <mesh ref={haloInnerRef} scale={1.45} raycast={() => null}>
             <sphereGeometry args={[0.6, 48, 48]} />
             <meshBasicMaterial
               color={AGENT.visual.glowColor}
@@ -272,7 +272,7 @@ export default function AgentOrb() {
               depthWrite={false}
             />
           </mesh>
-          <mesh ref={haloOuterRef} scale={2.0}>
+          <mesh ref={haloOuterRef} scale={2.0} raycast={() => null}>
             <sphereGeometry args={[0.6, 32, 32]} />
             <meshBasicMaterial
               color={AGENT.visual.coreColor}
@@ -284,7 +284,7 @@ export default function AgentOrb() {
           </mesh>
 
           {/* Spherical energy pulse (active / hover only). */}
-          <mesh ref={rippleRef}>
+          <mesh ref={rippleRef} raycast={() => null}>
             <sphereGeometry args={[0.62, 48, 48]} />
             <meshBasicMaterial
               color={AGENT.visual.glowColor}
@@ -297,7 +297,7 @@ export default function AgentOrb() {
           </mesh>
 
           {/* Crossed orbiting luminous rings. */}
-          <mesh ref={ring1Ref} rotation={[1.15, 0, 0]}>
+          <mesh ref={ring1Ref} rotation={[1.15, 0, 0]} raycast={() => null}>
             <torusGeometry args={[0.98, 0.014, 16, 120]} />
             <meshBasicMaterial
               color={AGENT.visual.glowColor}
@@ -308,7 +308,7 @@ export default function AgentOrb() {
               toneMapped={false}
             />
           </mesh>
-          <mesh ref={ring2Ref} rotation={[-1.0, 0.6, 0]}>
+          <mesh ref={ring2Ref} rotation={[-1.0, 0.6, 0]} raycast={() => null}>
             <torusGeometry args={[1.08, 0.01, 16, 120]} />
             <meshBasicMaterial
               color={AGENT.visual.listeningColor}
