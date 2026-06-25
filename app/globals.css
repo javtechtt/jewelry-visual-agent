@@ -160,6 +160,38 @@ button {
   padding-left: 0.3em;
 }
 
+/* Portrait boutique carousel dots (only rendered in the portrait scene). */
+.boutique-dots {
+  display: flex;
+  gap: 0.3rem;
+  align-items: center;
+}
+.boutique-dot {
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  border: none;
+  padding: 0;
+}
+.boutique-dot::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  border: 1px solid var(--hairline);
+  background: rgba(255, 255, 255, 0.5);
+  transition: all 0.25s ease;
+}
+.boutique-dot--on::before {
+  width: 9px;
+  height: 9px;
+  background: var(--champagne);
+  border-color: var(--champagne);
+  box-shadow: 0 0 0 4px rgba(201, 169, 106, 0.16);
+}
+
 /* --- scene transition flash ---------------------------------------------- */
 
 .scene-flash {
