@@ -20,13 +20,26 @@ function simulate(ms = 1400): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-export async function runCheckout(payload: CheckoutPayload): Promise<DemoReceipt> {
+export async function runCheckout(payload: {
+  name: string;
+  email: string;
+  phone: string;
+  paymentMethod: CheckoutPayload["paymentMethod"];
+  consent: boolean;
+  items: { name: string; priceLabel: string; qty: number }[];
+  total: string;
+}): Promise<DemoReceipt> {
   await simulate();
   // TODO(production): create order + capture payment via your processor here.
+  const pieces = payload.items.reduce((n, i) => n + i.qty, 0);
+  const summary =
+    payload.items.length === 1
+      ? `${payload.items[0].name} — ${payload.total}`
+      : `${pieces} pieces — ${payload.total}`;
   return createReceipt(
     "checkout",
-    `${payload.productName} — ${payload.priceLabel}`,
-    "In production this would create an order and capture payment securely. No card was collected or charged in this demo.",
+    summary,
+    "A confirmation has been sent to your email. Our team will be in touch about delivery.",
   );
 }
 

@@ -14,7 +14,7 @@ import type {
 } from "@/types/experience";
 import type { CategoryId } from "@/types/category";
 import type { CommandId, MatchedIntent, RealtimeStatus } from "@/types/voice";
-import type { DemoReceipt } from "@/types/demo";
+import type { CartItem, DemoReceipt } from "@/types/demo";
 import type { ViewMode } from "@/config/responsive";
 import { AGENT } from "@/config/agent";
 import { CATEGORY_MAP } from "@/config/categories";
@@ -40,8 +40,9 @@ export interface ExperienceState {
   caption: string;
   textFallbackOpen: boolean;
 
-  // --- selection + demo ---
+  // --- selection + cart + demo ---
   selectedProduct: SelectedProduct | null;
+  cart: CartItem[];
   demoFlow: DemoFlowId | null;
   lastReceipt: DemoReceipt | null;
 
@@ -59,6 +60,11 @@ export interface ExperienceState {
   setTextFallbackOpen: (open: boolean) => void;
   toggleTextFallback: () => void;
   setReceipt: (receipt: DemoReceipt | null) => void;
+
+  // --- cart (the system's order source of truth) ---
+  addToCart: (item: Omit<CartItem, "qty">) => void;
+  removeFromCart: (id: string) => void;
+  clearCart: () => void;
 
   // --- high-level experience actions ---
   enterCategory: (id: CategoryId) => void;
@@ -84,6 +90,7 @@ const INITIAL = {
   caption: AGENT.lines.greeting,
   textFallbackOpen: false,
   selectedProduct: null as SelectedProduct | null,
+  cart: [] as CartItem[],
   demoFlow: null as DemoFlowId | null,
   lastReceipt: null as DemoReceipt | null,
 };
@@ -131,6 +138,17 @@ export const useExperienceStore = create<ExperienceState>((set, get) => ({
     set({ selectedProduct: product, focusedOptionId: product.id });
     get().speak(AGENT.lines.selectProduct(product.name));
   },
+
+  addToCart: (item) =>
+    set((s) => {
+      const existing = s.cart.find((c) => c.id === item.id);
+      const cart = existing
+        ? s.cart.map((c) => (c.id === item.id ? { ...c, qty: c.qty + 1 } : c))
+        : [...s.cart, { ...item, qty: 1 }];
+      return { cart };
+    }),
+  removeFromCart: (id) => set((s) => ({ cart: s.cart.filter((c) => c.id !== id) })),
+  clearCart: () => set({ cart: [] }),
 
   openDemoFlow: (flow) => {
     set({ demoFlow: flow });

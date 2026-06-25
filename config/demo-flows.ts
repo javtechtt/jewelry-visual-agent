@@ -19,9 +19,9 @@ export const DEMO_FLOWS: Record<DemoFlowId, DemoFlowConfig> = {
   checkout: {
     id: "checkout",
     title: "Private Checkout",
-    subtitle: "Review and reserve — demo only.",
-    referencePrefix: "DEMO-ORD",
-    safeNote: "This is a demo checkout. No payment has been processed.",
+    subtitle: "Review and complete your order.",
+    referencePrefix: "ORD",
+    safeNote: "",
   },
   booking: {
     id: "booking",
@@ -48,7 +48,7 @@ export const DEMO_FLOWS: Record<DemoFlowId, DemoFlowConfig> = {
 
 /** Placeholder payment choices — never a real card number. */
 export const PAYMENT_METHODS = [
-  { id: "demo-card", label: "Demo Card" },
+  { id: "demo-card", label: "Card" },
   { id: "pay-in-person", label: "Pay in Boutique" },
   { id: "request-invoice", label: "Request Invoice" },
   { id: "confirm-later", label: "Confirm Later" },

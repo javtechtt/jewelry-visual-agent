@@ -12,6 +12,16 @@ export interface ContactDetails {
   phone: string;
 }
 
+/** A piece in the guest's bag. The store owns the cart; the agent mutates it
+ *  only through tools (add_to_cart / remove_from_cart). */
+export interface CartItem {
+  id: string;
+  categoryId: CategoryId;
+  name: string;
+  priceLabel: string;
+  qty: number;
+}
+
 export interface CheckoutPayload extends ContactDetails {
   productId: string;
   productName: string;

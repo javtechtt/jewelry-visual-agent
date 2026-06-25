@@ -1,11 +1,13 @@
 "use client";
 
-// Demo-safe checkout: selection summary → details → review → simulated
-// processing → demo receipt. Never collects a real card; never charges.
+// Checkout over the guest's bag (the store's cart — the order source of truth):
+// order summary → details → review → processing → confirmation. No real card is
+// collected and nothing is charged (see lib/demo/demoActions).
 
 import { useEffect, useState } from "react";
 import { useExperienceStore } from "@/lib/stores/useExperienceStore";
 import { PAYMENT_METHODS } from "@/config/demo-flows";
+import { cartTotalLabel } from "@/lib/cart";
 import { runCheckout } from "@/lib/demo/demoActions";
 import { hasErrors, validateCheckout } from "@/lib/demo/demoValidation";
 import type { CheckoutPayload, DemoReceipt, ValidationErrors } from "@/types/demo";
@@ -24,10 +26,10 @@ export default function DemoCheckoutOverlay() {
   const open = useExperienceStore((s) => s.demoFlow === "checkout");
   const close = useExperienceStore((s) => s.closeDemoFlow);
   const setReceipt = useExperienceStore((s) => s.setReceipt);
-  const selected = useExperienceStore((s) => s.selectedProduct);
-
-  const productName = selected?.name ?? "Selected piece";
-  const priceLabel = selected?.priceLabel ?? "By request";
+  const cart = useExperienceStore((s) => s.cart);
+  const clearCart = useExperienceStore((s) => s.clearCart);
+  const selectedProduct = useExperienceStore((s) => s.selectedProduct);
+  const addToCart = useExperienceStore((s) => s.addToCart);
 
   const [step, setStep] = useState<DemoStep>("form");
   const [form, setForm] = useState<Form>({ paymentMethod: "demo-card", consent: false });
@@ -36,6 +38,8 @@ export default function DemoCheckoutOverlay() {
 
   useEffect(() => {
     if (open) {
+      // Opened checkout directly with nothing in the bag? Fold in the focused piece.
+      if (cart.length === 0 && selectedProduct) addToCart(selectedProduct);
       setStep("form");
       setErrors({});
       setLocalReceipt(null);
@@ -44,10 +48,10 @@ export default function DemoCheckoutOverlay() {
   }, [open]);
 
   const set = (patch: Form) => setForm((f) => ({ ...f, ...patch }));
+  const total = cartTotalLabel(cart);
 
   const toReview = () => {
-    const payload: Partial<CheckoutPayload> = { ...form, productName, priceLabel, productId: selected?.id ?? "demo" };
-    const v = validateCheckout(payload);
+    const v = validateCheckout(form);
     setErrors(v);
     if (!hasErrors(v)) setStep("review");
   };
@@ -58,12 +62,12 @@ export default function DemoCheckoutOverlay() {
       name: form.name ?? "",
       email: form.email ?? "",
       phone: form.phone ?? "",
-      productId: selected?.id ?? "demo",
-      productName,
-      priceLabel,
       paymentMethod: form.paymentMethod ?? "demo-card",
       consent: Boolean(form.consent),
+      items: cart.map((c) => ({ name: c.name, priceLabel: c.priceLabel, qty: c.qty })),
+      total,
     });
+    clearCart();
     setLocalReceipt(result);
     setReceipt(result);
     setStep("done");
@@ -71,13 +75,29 @@ export default function DemoCheckoutOverlay() {
 
   return (
     <DemoFlowShell flowId="checkout" open={open} onClose={close}>
-      <div className="demo-summary">
-        <span className="demo-summary__label">Reserving</span>
-        <span className="demo-summary__value">{productName}</span>
-        <span className="demo-summary__price">{priceLabel}</span>
-      </div>
+      {step !== "done" && (
+        <div className="demo-summary">
+          <span className="demo-summary__label">Your order</span>
+          {cart.length === 0 ? (
+            <span className="demo-summary__value">Your bag is empty</span>
+          ) : (
+            <ul className="demo-cartlines">
+              {cart.map((c) => (
+                <li key={c.id}>
+                  <span>
+                    {c.name}
+                    {c.qty > 1 ? ` ×${c.qty}` : ""}
+                  </span>
+                  <span>{c.priceLabel}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+          {cart.length > 0 && <span className="demo-summary__price">Total · {total}</span>}
+        </div>
+      )}
 
-      {step === "form" && (
+      {step === "form" && cart.length > 0 && (
         <>
           <Field label="Name" name="name" errors={errors}>
             <input className="demo-input" value={form.name ?? ""} onChange={(e) => set({ name: e.target.value })} />
@@ -88,7 +108,7 @@ export default function DemoCheckoutOverlay() {
           <Field label="Phone" name="phone" errors={errors}>
             <input className="demo-input" value={form.phone ?? ""} onChange={(e) => set({ phone: e.target.value })} />
           </Field>
-          <Field label="Payment (placeholder)" name="paymentMethod" errors={errors}>
+          <Field label="Payment" name="paymentMethod" errors={errors}>
             <div className="demo-choices">
               {PAYMENT_METHODS.map((m) => (
                 <button
@@ -108,7 +128,7 @@ export default function DemoCheckoutOverlay() {
               checked={Boolean(form.consent)}
               onChange={(e) => set({ consent: e.target.checked })}
             />
-            <span>I understand this is a demo and no payment will be taken.</span>
+            <span>I agree to the Terms of Sale.</span>
           </label>
           {errors.consent && <span className="demo-field__error">{errors.consent}</span>}
           <StepFooter onNext={toReview} nextLabel="Review" />
@@ -118,17 +138,37 @@ export default function DemoCheckoutOverlay() {
       {step === "review" && (
         <>
           <ul className="demo-review">
-            <li><span>Piece</span><span>{productName}</span></li>
-            <li><span>Price</span><span>{priceLabel}</span></li>
-            <li><span>Name</span><span>{form.name}</span></li>
-            <li><span>Email</span><span>{form.email}</span></li>
-            <li><span>Payment</span><span>{PAYMENT_METHODS.find((m) => m.id === form.paymentMethod)?.label}</span></li>
+            {cart.map((c) => (
+              <li key={c.id}>
+                <span>
+                  {c.name}
+                  {c.qty > 1 ? ` ×${c.qty}` : ""}
+                </span>
+                <span>{c.priceLabel}</span>
+              </li>
+            ))}
+            <li>
+              <span>Total</span>
+              <span>{total}</span>
+            </li>
+            <li>
+              <span>Name</span>
+              <span>{form.name}</span>
+            </li>
+            <li>
+              <span>Email</span>
+              <span>{form.email}</span>
+            </li>
+            <li>
+              <span>Payment</span>
+              <span>{PAYMENT_METHODS.find((m) => m.id === form.paymentMethod)?.label}</span>
+            </li>
           </ul>
-          <StepFooter onBack={() => setStep("form")} onNext={confirm} nextLabel="Confirm (demo)" />
+          <StepFooter onBack={() => setStep("form")} onNext={confirm} nextLabel="Place order" />
         </>
       )}
 
-      {step === "processing" && <DemoProcessing label="Preparing your private checkout…" />}
+      {step === "processing" && <DemoProcessing label="Placing your order…" />}
       {step === "done" && receipt && <DemoConfirmation receipt={receipt} onDone={close} />}
     </DemoFlowShell>
   );

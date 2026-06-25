@@ -58,7 +58,7 @@ export function DemoFlowShell({
               </button>
             </header>
 
-            <p className="demo-note">{config.safeNote}</p>
+            {config.safeNote && <p className="demo-note">{config.safeNote}</p>}
 
             <div className="demo-panel__body">{children}</div>
           </motion.section>
@@ -84,6 +84,14 @@ export function DemoConfirmation({
   receipt: DemoReceipt;
   onDone: () => void;
 }) {
+  const badge =
+    receipt.kind === "checkout"
+      ? "Order confirmed"
+      : receipt.kind === "booking"
+        ? "Appointment confirmed"
+        : receipt.kind === "lead"
+          ? "Thank you"
+          : "You're connected";
   return (
     <motion.div
       className="demo-confirm"
@@ -91,7 +99,7 @@ export function DemoConfirmation({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
     >
-      <span className="demo-confirm__badge">Demo confirmation</span>
+      <span className="demo-confirm__badge">{badge}</span>
       <p className="demo-confirm__ref">{receipt.reference}</p>
       <p className="demo-confirm__summary">{receipt.summary}</p>
       <p className="demo-confirm__time">{receipt.createdLabel}</p>

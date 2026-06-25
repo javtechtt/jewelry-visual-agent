@@ -458,6 +458,99 @@ button {
 }
 .text-panel__chip:hover { color: var(--ink); border-color: var(--champagne-soft); }
 
+/* --- cart panel ---------------------------------------------------------- */
+
+.cart-panel {
+  position: fixed;
+  top: 4.6rem;
+  right: 2rem;
+  z-index: 34;
+  width: min(86vw, 300px);
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  padding: 0.95rem 1rem;
+  border-radius: 18px;
+  background: var(--glass-strong);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(20px);
+  box-shadow: var(--shadow-soft);
+}
+.cart-panel__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.cart-panel__title {
+  font-family: var(--font-serif);
+  font-size: 1.05rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+.cart-panel__count {
+  min-width: 1.4rem;
+  height: 1.4rem;
+  padding: 0 0.4rem;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #f3e6c6, var(--champagne));
+  color: #3a2f1c;
+  font-size: 0.72rem;
+  font-weight: 600;
+  display: grid;
+  place-items: center;
+}
+.cart-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  max-height: 42vh;
+  overflow-y: auto;
+}
+.cart-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.cart-item__name {
+  flex: 1;
+  font-size: 0.82rem;
+  color: var(--ink);
+}
+.cart-item__price {
+  font-size: 0.76rem;
+  letter-spacing: 0.04em;
+  color: var(--champagne);
+}
+.cart-item__remove {
+  border: none;
+  background: transparent;
+  color: var(--ink-faint);
+  font-size: 1.2rem;
+  line-height: 1;
+  padding: 0 0.1rem;
+  transition: color 0.2s ease;
+}
+.cart-item__remove:hover {
+  color: var(--ink);
+}
+.cart-panel__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  padding-top: 0.65rem;
+  border-top: 1px solid var(--hairline);
+}
+.cart-total {
+  font-family: var(--font-serif);
+  font-size: 1.1rem;
+  color: var(--ink);
+}
+
 /* --- demo flows ---------------------------------------------------------- */
 
 .demo-backdrop {
@@ -543,6 +636,22 @@ button {
 }
 .demo-summary__value { font-family: var(--font-serif); font-size: 1.2rem; color: var(--ink); }
 .demo-summary__price { font-size: 0.8rem; color: var(--champagne); letter-spacing: 0.08em; }
+.demo-cartlines {
+  list-style: none;
+  margin: 0.35rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+.demo-cartlines li {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  font-size: 0.88rem;
+  color: var(--ink);
+}
+.demo-cartlines li span:last-child { color: var(--champagne); letter-spacing: 0.04em; }
 
 .demo-field { display: flex; flex-direction: column; gap: 0.3rem; }
 .demo-field__label {

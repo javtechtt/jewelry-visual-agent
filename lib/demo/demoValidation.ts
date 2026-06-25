@@ -34,7 +34,7 @@ function validateContact(details: Partial<ContactDetails>): ValidationErrors {
 export function validateCheckout(payload: Partial<CheckoutPayload>): ValidationErrors {
   const errors = validateContact(payload);
   if (!payload.paymentMethod) errors.paymentMethod = "Choose a method.";
-  if (!payload.consent) errors.consent = "Please acknowledge the demo notice.";
+  if (!payload.consent) errors.consent = "Please accept the Terms of Sale.";
   return errors;
 }
 
