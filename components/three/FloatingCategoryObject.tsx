@@ -22,6 +22,8 @@ interface FloatingCategoryObjectProps {
   hitScale?: number;
   /** Label vertical offset — defaults to the desktop value. */
   labelY?: number;
+  /** Html distanceFactor for the label — smaller = smaller on-screen text. */
+  labelDistance?: number;
 }
 
 export default function FloatingCategoryObject({
@@ -31,6 +33,7 @@ export default function FloatingCategoryObject({
   objectScale = 1,
   hitScale = 1,
   labelY = -0.95,
+  labelDistance = 8,
 }: FloatingCategoryObjectProps) {
   const [hovered, setHovered] = useState(false);
   const enterCategory = useExperienceStore((s) => s.enterCategory);
@@ -76,7 +79,7 @@ export default function FloatingCategoryObject({
           <Html
             center
             position={[0, labelY, 0.12]}
-            distanceFactor={8}
+            distanceFactor={labelDistance}
             zIndexRange={[8, 0]}
             style={{ pointerEvents: "none" }}
           >

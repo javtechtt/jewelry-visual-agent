@@ -87,8 +87,8 @@ const SCENE_VIEWS: Record<SceneId, Record<ViewMode, SceneView>> = {
     // Portrait phones / portrait tablets: the categories restack into a gentle
     // vertical S-curve (see BoutiqueWindowScene), so the camera frames height.
     portrait: {
-      camera: { position: [0, 0.35, 6.8], target: [0, 0.15, 0], fov: 48 },
-      orb: { position: [0, 1.5, -1.7], scale: 0.5 },
+      camera: { position: [0, 0.4, 9.2], target: [0, 0.4, 0], fov: 44 },
+      orb: { position: [0, 3.05, -3.4], scale: 0.26 },
     },
   },
   "luminous-atelier": {
@@ -102,7 +102,7 @@ const SCENE_VIEWS: Record<SceneId, Record<ViewMode, SceneView>> = {
     },
     portrait: {
       camera: { position: [0, 0.4, 8.6], target: [0, 0.45, 0], fov: 46 },
-      orb: { position: [0, 0.5, -0.7], scale: 0.74 },
+      orb: { position: [0, 0.5, -0.7], scale: 0.55 },
     },
   },
 };
@@ -132,12 +132,16 @@ export interface BoutiqueLayout {
   hitScale: number;
   /** Label vertical offset below each product. */
   labelY: number;
+  /** Html distanceFactor for category labels (smaller = smaller on screen). */
+  labelDistance: number;
 }
 
 export const BOUTIQUE_LAYOUT: Record<ViewMode, BoutiqueLayout> = {
-  desktop: { vertical: false, spread: 9.6, vSpread: 0, zig: 0, objectScale: 1, hitScale: 1, labelY: -0.95 },
-  landscape: { vertical: false, spread: 7.2, vSpread: 0, zig: 0, objectScale: 0.92, hitScale: 1.05, labelY: -0.92 },
-  portrait: { vertical: true, spread: 0, vSpread: 4.7, zig: 0.55, objectScale: 0.74, hitScale: 1.3, labelY: -0.86 },
+  desktop: { vertical: false, spread: 9.6, vSpread: 0, zig: 0, objectScale: 1, hitScale: 1, labelY: -0.95, labelDistance: 8 },
+  landscape: { vertical: false, spread: 7.2, vSpread: 0, zig: 0, objectScale: 0.92, hitScale: 1.05, labelY: -0.92, labelDistance: 8 },
+  // Portrait: a calm, centred vertical column of all five categories, with small
+  // crisp labels, sized to sit between the top chips and the bottom controls.
+  portrait: { vertical: true, spread: 0, vSpread: 3.6, zig: 0, objectScale: 0.5, hitScale: 1.3, labelY: -0.5, labelDistance: 3.6 },
 };
 
 /** Luminous Atelier ring layout, per view. Desktop reproduces the original
@@ -148,10 +152,14 @@ export interface AtelierLayout {
   /** Category title plate height + perspective scale. */
   titleY: number;
   titleDistance: number;
+  /** Html distanceFactor for each piece's name/price label. */
+  labelDistance: number;
 }
 
 export const ATELIER_LAYOUT: Record<ViewMode, AtelierLayout> = {
-  desktop: { ringRadius: 2.7, optionScale: 1, titleY: 2.2, titleDistance: 9 },
-  landscape: { ringRadius: 2.1, optionScale: 0.92, titleY: 2.05, titleDistance: 10 },
-  portrait: { ringRadius: 1.2, optionScale: 0.8, titleY: 1.85, titleDistance: 12 },
+  desktop: { ringRadius: 2.7, optionScale: 1, titleY: 2.2, titleDistance: 9, labelDistance: 7 },
+  landscape: { ringRadius: 2.1, optionScale: 0.92, titleY: 2.05, titleDistance: 10, labelDistance: 7 },
+  // Portrait: a wider, calmer ring with smaller pieces + small crisp labels so the
+  // names/prices don't pile on top of each other on a narrow screen.
+  portrait: { ringRadius: 1.75, optionScale: 0.78, titleY: 2.0, titleDistance: 6, labelDistance: 3.6 },
 };

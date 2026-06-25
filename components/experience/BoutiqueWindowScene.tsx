@@ -28,7 +28,7 @@ export default function BoutiqueWindowScene() {
           // Portrait: a gentle vertical S-curve so all categories stay framed and
           // tappable on a narrow screen (a horizontal arc would clip or overlap).
           const x = Math.sin(t * Math.PI * 2) * layout.zig;
-          const y = (0.5 - t) * layout.vSpread + 0.3;
+          const y = (0.5 - t) * layout.vSpread + 0.5;
           const z = -Math.abs(x) * 0.12;
           position = [x, y, z];
           rotationY = -x * 0.06;
@@ -49,6 +49,7 @@ export default function BoutiqueWindowScene() {
             objectScale={layout.objectScale}
             hitScale={layout.hitScale}
             labelY={layout.labelY}
+            labelDistance={layout.labelDistance}
           />
         );
       })}

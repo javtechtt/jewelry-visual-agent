@@ -1135,6 +1135,9 @@ button {
   }
   .cart-list { max-height: 24vh; }
 
+  /* Atelier category title — smaller + tighter so it doesn't span the screen. */
+  .atelier-title { font-size: 1.4rem; letter-spacing: 0.2em; }
+
   /* Caption sits clear above the action row. */
   .caption-dock {
     bottom: calc(8.6rem + env(safe-area-inset-bottom));

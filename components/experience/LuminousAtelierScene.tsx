@@ -25,12 +25,14 @@ function AtelierOption({
   position,
   scale,
   focused,
+  labelDistance,
   onSelect,
 }: {
   option: CategoryOption;
   position: Vec3;
   scale: number;
   focused: boolean;
+  labelDistance: number;
   onSelect: () => void;
 }) {
   const [hovered, setHovered] = useState(false);
@@ -100,7 +102,7 @@ function AtelierOption({
           <Html
             center
             position={[0, -0.82, 0.12]}
-            distanceFactor={7}
+            distanceFactor={labelDistance}
             zIndexRange={[8, 0]}
             style={{ pointerEvents: "none" }}
           >
@@ -165,6 +167,7 @@ export default function LuminousAtelierScene() {
               option={option}
               position={[x, y, z]}
               scale={layout.optionScale}
+              labelDistance={layout.labelDistance}
               focused={selectedProduct?.id === option.id}
               onSelect={() =>
                 selectProduct({
