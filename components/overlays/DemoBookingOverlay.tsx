@@ -47,9 +47,11 @@ export default function DemoBookingOverlay() {
   const confirmBooking = useExperienceStore((s) => s.confirmBooking);
   const receipt = useExperienceStore((s) => s.lastReceipt);
 
-  const service = activeCategory
-    ? `${CATEGORY_MAP[activeCategory].label} consultation`
-    : "Private appointment";
+  // The guest's stated reason (set via set_appointment) takes precedence over
+  // the category-derived default so "wedding ring" doesn't stay "Watches".
+  const service =
+    booking.service.trim() ||
+    (activeCategory ? `${CATEGORY_MAP[activeCategory].label} consultation` : "Private appointment");
   const scheduleReady = Boolean(booking.date && booking.time);
   const detailsReady =
     Boolean(booking.name.trim()) && isEmail(booking.email) && Boolean(booking.phone.trim());

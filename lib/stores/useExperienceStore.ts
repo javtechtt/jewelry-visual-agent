@@ -49,6 +49,7 @@ const EMPTY_CHECKOUT: CheckoutForm = {
 const EMPTY_CARD: CardDetails = { number: "", exp: "", cvc: "" };
 
 const EMPTY_BOOKING: BookingForm = {
+  service: "",
   date: "",
   time: "",
   name: "",
@@ -297,7 +298,8 @@ export const useExperienceStore = create<ExperienceState>((set, get) => ({
       email: booking.email,
       phone: booking.phone,
       categoryId: activeCategory ?? "general",
-      service: serviceLabel(activeCategory),
+      // The guest's stated reason wins; otherwise fall back to the category.
+      service: booking.service.trim() || serviceLabel(activeCategory),
       date: booking.date,
       time: booking.time,
       notes: booking.notes,

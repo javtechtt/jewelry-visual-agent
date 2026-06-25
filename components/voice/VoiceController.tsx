@@ -241,6 +241,7 @@ function runToolCall(name: string, args: Record<string, unknown>): string {
     case "set_appointment": {
       if (store.demoFlow !== "booking") store.runCommand({ command: "book-appointment" });
       const patch: Partial<BookingForm> = {};
+      if (args.reason != null && String(args.reason).trim()) patch.service = String(args.reason).trim();
       if (args.date != null && String(args.date).trim()) {
         const iso = normalizeDate(String(args.date));
         if (iso) patch.date = iso;

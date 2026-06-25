@@ -58,9 +58,11 @@ export interface CardDetails {
 /** The booking journey screens (+ the transient processing state). */
 export type BookingStep = "schedule" | "details" | "processing" | "confirmation";
 
-/** Live appointment form. Lives in the store so the agent can fill the date,
- *  time, and contact details in real time. `date` is an ISO yyyy-mm-dd string. */
+/** Live appointment form. Lives in the store so the agent can fill the reason,
+ *  date, time, and contact details in real time. `date` is an ISO yyyy-mm-dd
+ *  string; `service` is the appointment reason (empty = the category default). */
 export interface BookingForm {
+  service: string;
   date: string;
   time: string;
   name: string;
