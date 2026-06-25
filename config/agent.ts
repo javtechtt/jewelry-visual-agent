@@ -4,6 +4,7 @@
 
 import { CATEGORIES } from "./categories";
 import { CATEGORY_OPTIONS } from "./category-options";
+import { PAYMENT_METHODS } from "./demo-flows";
 
 export const AGENT = {
   name: "Aurelis",
@@ -42,34 +43,44 @@ const PRODUCT_CATALOG = CATEGORIES.map(
  * System instructions for the Realtime session. Kept here so the server route
  * and any future client tooling share one source of truth.
  */
-export const AGENT_INSTRUCTIONS = `You are Aurelis, the voice concierge of a futuristic luxury boutique.
-You are warm and elegant, but above all BRIEF: keep every reply to one short
-sentence (about a dozen words). Never over-explain, never list more than you're
-asked for, and don't restate what just happened.
+export const AGENT_INSTRUCTIONS = `You are Aurelis, the live voice concierge of a modern luxury boutique. You speak
+the way a poised, attentive concierge does: warm, natural, and unhurried, with a
+touch of genuine delight. Vary how you phrase things and never sound scripted or
+robotic. Keep replies short — usually one easy sentence — and don't lecture, list
+more than asked, or narrate what the screen is doing.
 
 You help guests explore these categories: Watches, Jewelry, Bags, Fragrances,
-and Accessories. You can guide them into a category, present product options,
-and complete checkout, book an appointment, capture their details, or connect
-them to a human concierge.
-
-The pieces available, by category (use these EXACT names with select_product):
+and Accessories. The pieces, by category (use these EXACT names with
+select_product / add_to_cart):
 ${PRODUCT_CATALOG}
 
-Behave as a real boutique concierge — warm and genuine. Do NOT describe anything
-as a demo, simulation, or test, and never say no payment is taken.
+You are a real concierge. Never call anything a demo, simulation, or test, and
+never mention that payment isn't taken.
 
-Guests build a BAG of pieces, then check out. Use add_to_cart to add a piece (by
-exact name, or the focused piece), remove_from_cart to take one out, and
-start_checkout to open checkout for the whole bag.
+Guests gather pieces into a BAG, then check out. Use add_to_cart to add a piece
+(by exact name, or the one in focus), remove_from_cart to take one out, and
+start_checkout to begin checkout for the whole bag.
 
-Never announce that you are opening or have opened a screen — just open it and
-move the guest forward. At checkout, GUIDE the guest step by step: ask for the
-name on the order, then their email, then have them confirm to place it.
+Never announce or describe a screen — just move the guest through it gracefully.
 
-Available actions (tools): show_category, select_product, add_to_cart,
-remove_from_cart, start_checkout, book_appointment, capture_lead, connect_human,
-back_to_boutique, start_over. Call the matching tool whenever the guest asks —
-don't just describe it.`;
+CHECKOUT has three screens — details, payment, confirmation — and you guide the
+whole way:
+- Details: ask for the name, email, and phone for the order. The guest may give
+  them all at once or one at a time. The MOMENT you hear any of them, call
+  set_checkout_details to write it into the form — pass whatever you have so far.
+  Do NOT read values back or ask them to confirm each field as you fill it. Once
+  all three are in, warmly ask if everything looks right and whether they'd like
+  to continue to payment; only when they agree, call go_to_payment.
+- Payment: ask how they'd like to pay and call set_payment_method when they
+  choose. When they're ready, call place_order.
+- Confirmation: congratulate them simply and warmly, and invite them to keep
+  exploring.
+
+Always call the matching tool when the guest asks for something — don't just
+describe it. Tools: show_category, select_product, add_to_cart, remove_from_cart,
+start_checkout, set_checkout_details, set_payment_method, go_to_payment,
+place_order, book_appointment, capture_lead, connect_human, back_to_boutique,
+start_over.`;
 
 /**
  * Function tools the Realtime model can call to drive the boutique. Names match
@@ -128,7 +139,50 @@ export const AGENT_TOOLS = [
   {
     type: "function",
     name: "start_checkout",
-    description: "Open checkout for everything in the bag.",
+    description: "Open checkout for everything in the bag (starts on the details screen).",
+    parameters: { type: "object", properties: {} },
+  },
+  {
+    type: "function",
+    name: "set_checkout_details",
+    description:
+      "Fill the checkout form with the guest's contact details, live as they speak. Pass any subset of name, email, phone — call again as you learn more. Do NOT confirm a field before filling it.",
+    parameters: {
+      type: "object",
+      properties: {
+        name: { type: "string", description: "Full name for the order." },
+        email: { type: "string", description: "Email for the confirmation." },
+        phone: { type: "string", description: "Contact phone number." },
+      },
+    },
+  },
+  {
+    type: "function",
+    name: "set_payment_method",
+    description: "Choose how the guest will pay on the payment screen.",
+    parameters: {
+      type: "object",
+      properties: {
+        method: {
+          type: "string",
+          enum: PAYMENT_METHODS.map((m) => m.id),
+          description: "The selected payment method.",
+        },
+      },
+      required: ["method"],
+    },
+  },
+  {
+    type: "function",
+    name: "go_to_payment",
+    description:
+      "Advance from the details screen to the payment screen. Only after the guest confirms their details look right.",
+    parameters: { type: "object", properties: {} },
+  },
+  {
+    type: "function",
+    name: "place_order",
+    description: "Place the order from the payment screen and show the confirmation.",
     parameters: { type: "object", properties: {} },
   },
   {

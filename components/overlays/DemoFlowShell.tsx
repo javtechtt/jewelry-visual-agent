@@ -18,11 +18,14 @@ export function DemoFlowShell({
   open,
   onClose,
   children,
+  subtitle,
 }: {
   flowId: DemoFlowId;
   open: boolean;
   onClose: () => void;
   children: ReactNode;
+  /** Overrides the static config subtitle (e.g. per checkout step). */
+  subtitle?: string;
 }) {
   const config = DEMO_FLOWS[flowId];
 
@@ -51,7 +54,7 @@ export function DemoFlowShell({
             <header className="demo-panel__head">
               <div>
                 <h2 className="demo-panel__title">{config.title}</h2>
-                <p className="demo-panel__subtitle">{config.subtitle}</p>
+                <p className="demo-panel__subtitle">{subtitle ?? config.subtitle}</p>
               </div>
               <button type="button" className="demo-panel__close" aria-label="Close" onClick={onClose}>
                 ×

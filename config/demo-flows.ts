@@ -18,8 +18,8 @@ export interface DemoFlowConfig {
 export const DEMO_FLOWS: Record<DemoFlowId, DemoFlowConfig> = {
   checkout: {
     id: "checkout",
-    title: "Private Checkout",
-    subtitle: "Review and complete your order.",
+    title: "Checkout",
+    subtitle: "Complete your order in a few graceful steps.",
     referencePrefix: "ORD",
     safeNote: "",
   },
@@ -46,12 +46,12 @@ export const DEMO_FLOWS: Record<DemoFlowId, DemoFlowConfig> = {
   },
 };
 
-/** Placeholder payment choices — never a real card number. */
+/** Payment choices. The "card" option shows card fields that are local-only and
+ *  never transmitted (see DemoCheckoutOverlay) — no real card is ever captured. */
 export const PAYMENT_METHODS = [
-  { id: "demo-card", label: "Card" },
-  { id: "pay-in-person", label: "Pay in Boutique" },
-  { id: "request-invoice", label: "Request Invoice" },
-  { id: "confirm-later", label: "Confirm Later" },
+  { id: "card", label: "Card" },
+  { id: "boutique", label: "Pay in Boutique" },
+  { id: "invoice", label: "Request Invoice" },
 ] as const;
 
 /** Demo appointment slots. Not backed by any real calendar/availability. */

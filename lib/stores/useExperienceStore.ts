@@ -14,14 +14,28 @@ import type {
 } from "@/types/experience";
 import type { CategoryId } from "@/types/category";
 import type { CommandId, MatchedIntent, RealtimeStatus } from "@/types/voice";
-import type { CartItem, DemoReceipt } from "@/types/demo";
+import type { CartItem, CheckoutForm, CheckoutStep, DemoReceipt } from "@/types/demo";
 import type { ViewMode } from "@/config/responsive";
 import { AGENT } from "@/config/agent";
 import { CATEGORY_MAP } from "@/config/categories";
+import { cartTotalLabel } from "@/lib/cart";
+import { runCheckout } from "@/lib/demo/demoActions";
 
 /** How long Aurelis stays in the "speaking" state after emitting a caption. */
 const SPEAK_MS = 2800;
 let speakTimer: ReturnType<typeof setTimeout> | null = null;
+
+/** How long a field stays "just filled by Aurelis" highlighted. */
+const FILL_HIGHLIGHT_MS = 1400;
+let fillTimer: ReturnType<typeof setTimeout> | null = null;
+
+const EMPTY_CHECKOUT: CheckoutForm = {
+  name: "",
+  email: "",
+  phone: "",
+  paymentMethod: "card",
+  consent: false,
+};
 
 export interface ExperienceState {
   // --- core scene state ---
@@ -46,6 +60,12 @@ export interface ExperienceState {
   demoFlow: DemoFlowId | null;
   lastReceipt: DemoReceipt | null;
 
+  // --- live checkout (the agent fills this in real time via tools) ---
+  checkout: CheckoutForm;
+  checkoutStep: CheckoutStep;
+  /** Field names just written by Aurelis — drives a brief on-screen highlight. */
+  checkoutFilled: string[];
+
   // --- primitive setters ---
   setScene: (scene: SceneId) => void;
   setView: (view: ViewMode) => void;
@@ -65,6 +85,12 @@ export interface ExperienceState {
   addToCart: (item: Omit<CartItem, "qty">) => void;
   removeFromCart: (id: string) => void;
   clearCart: () => void;
+
+  // --- checkout (system-owned; agent + UI both write through these) ---
+  updateCheckout: (patch: Partial<CheckoutForm>, fromAgent?: boolean) => void;
+  setCheckoutStep: (step: CheckoutStep) => void;
+  resetCheckout: () => void;
+  placeOrder: () => Promise<void>;
 
   // --- high-level experience actions ---
   enterCategory: (id: CategoryId) => void;
@@ -93,6 +119,9 @@ const INITIAL = {
   cart: [] as CartItem[],
   demoFlow: null as DemoFlowId | null,
   lastReceipt: null as DemoReceipt | null,
+  checkout: EMPTY_CHECKOUT,
+  checkoutStep: "details" as CheckoutStep,
+  checkoutFilled: [] as string[],
 };
 
 export const useExperienceStore = create<ExperienceState>((set, get) => ({
@@ -150,7 +179,43 @@ export const useExperienceStore = create<ExperienceState>((set, get) => ({
   removeFromCart: (id) => set((s) => ({ cart: s.cart.filter((c) => c.id !== id) })),
   clearCart: () => set({ cart: [] }),
 
+  updateCheckout: (patch, fromAgent = false) => {
+    set((s) => ({ checkout: { ...s.checkout, ...patch } }));
+    if (fromAgent) {
+      // Briefly highlight the fields Aurelis just wrote, then let them settle.
+      if (fillTimer) clearTimeout(fillTimer);
+      set({ checkoutFilled: Object.keys(patch) });
+      fillTimer = setTimeout(() => set({ checkoutFilled: [] }), FILL_HIGHLIGHT_MS);
+    } else {
+      set({ checkoutFilled: [] });
+    }
+  },
+
+  setCheckoutStep: (checkoutStep) => set({ checkoutStep }),
+
+  resetCheckout: () =>
+    set({ checkout: EMPTY_CHECKOUT, checkoutStep: "details", checkoutFilled: [] }),
+
+  placeOrder: async () => {
+    const { cart, checkout } = get();
+    if (cart.length === 0) return;
+    // Placing the order implies acceptance of the on-screen Terms of Sale.
+    set({ checkoutStep: "processing", checkout: { ...checkout, consent: true } });
+    const total = cartTotalLabel(cart);
+    const receipt = await runCheckout({
+      name: checkout.name,
+      email: checkout.email,
+      phone: checkout.phone,
+      paymentMethod: checkout.paymentMethod,
+      consent: true,
+      items: cart.map((c) => ({ name: c.name, priceLabel: c.priceLabel, qty: c.qty })),
+      total,
+    });
+    set({ lastReceipt: receipt, cart: [], checkoutStep: "confirmation" });
+  },
+
   openDemoFlow: (flow) => {
+    if (flow === "checkout") get().resetCheckout();
     set({ demoFlow: flow });
     const line =
       flow === "checkout"
@@ -163,7 +228,11 @@ export const useExperienceStore = create<ExperienceState>((set, get) => ({
     get().speak(line);
   },
 
-  closeDemoFlow: () => set({ demoFlow: null }),
+  closeDemoFlow: () => {
+    set({ demoFlow: null });
+    // Drop any captured contact details once the panel is dismissed.
+    get().resetCheckout();
+  },
 
   backToBoutique: () => {
     set({

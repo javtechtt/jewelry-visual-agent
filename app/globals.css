@@ -786,6 +786,174 @@ button {
 }
 .demo-confirm__done { margin-top: 0.9rem; }
 
+/* --- multi-screen checkout (details → payment → confirmation) --- */
+.checkout-steps {
+  list-style: none;
+  margin: 0 0 0.4rem;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem;
+}
+.checkout-step {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex: 1;
+  position: relative;
+}
+.checkout-step:not(:last-child)::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--hairline);
+  margin-left: 0.4rem;
+}
+.checkout-step__dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  border: 1px solid var(--hairline);
+  background: rgba(255, 255, 255, 0.7);
+  flex: none;
+  transition: all 0.3s ease;
+}
+.checkout-step__label {
+  font-size: 0.58rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  transition: color 0.3s ease;
+}
+.checkout-step--on .checkout-step__dot {
+  border-color: var(--champagne);
+  background: var(--champagne);
+  box-shadow: 0 0 0 4px rgba(201, 169, 106, 0.18);
+}
+.checkout-step--on .checkout-step__label { color: var(--ink); }
+.checkout-step--done .checkout-step__dot { border-color: var(--champagne); background: var(--champagne); }
+.checkout-step--done .checkout-step__label { color: var(--ink-soft); }
+
+.checkout-screen {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.checkout-summary {
+  padding: 0.8rem 0.9rem;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid var(--hairline);
+}
+.checkout-lines {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.checkout-lines li {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  font-size: 0.86rem;
+  color: var(--ink);
+}
+.checkout-lines li span:last-child { color: var(--champagne); letter-spacing: 0.03em; }
+.checkout-summary__total {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.6rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--hairline);
+  font-family: var(--font-serif);
+  font-size: 1.05rem;
+  color: var(--ink);
+}
+
+.checkout-fields { display: flex; flex-direction: column; gap: 0.7rem; }
+.checkout-input { transition: box-shadow 0.2s ease, border-color 0.2s ease; }
+
+.checkout-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: 0.3rem;
+}
+
+.checkout-paytotal {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 0.9rem 1rem;
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(201, 169, 106, 0.16), rgba(201, 169, 106, 0.06));
+  border: 1px solid rgba(201, 169, 106, 0.28);
+}
+.checkout-paytotal span {
+  font-size: 0.6rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+.checkout-paytotal strong {
+  font-family: var(--font-serif);
+  font-size: 1.7rem;
+  letter-spacing: 0.04em;
+  color: var(--ink);
+}
+
+.checkout-methods { display: flex; flex-wrap: wrap; gap: 0.45rem; }
+.checkout-method {
+  flex: 1;
+  min-width: 7rem;
+  padding: 0.6rem 0.7rem;
+  border-radius: 12px;
+  border: 1px solid var(--hairline);
+  background: rgba(255, 255, 255, 0.6);
+  font-size: 0.74rem;
+  letter-spacing: 0.04em;
+  color: var(--ink-soft);
+  transition: all 0.25s ease;
+}
+.checkout-method--on {
+  color: #3a2f1c;
+  border-color: var(--champagne);
+  background: rgba(201, 169, 106, 0.18);
+  box-shadow: 0 6px 18px -10px rgba(201, 169, 106, 0.7);
+}
+
+.checkout-card {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+.checkout-card__row { display: flex; gap: 0.6rem; }
+.checkout-card__row .demo-field { flex: 1; }
+.checkout-secure {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0;
+  font-size: 0.64rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+.checkout-secure__lock { color: var(--champagne); }
+
+.checkout-terms {
+  margin: 0;
+  font-size: 0.68rem;
+  line-height: 1.5;
+  color: var(--ink-faint);
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

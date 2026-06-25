@@ -11,8 +11,11 @@ import { RealtimeClient } from "@/lib/realtime/realtimeClient";
 import { useExperienceStore } from "@/lib/stores/useExperienceStore";
 import { getCategoryOptions } from "@/config/category-options";
 import { CATEGORIES } from "@/config/categories";
+import { PAYMENT_METHODS } from "@/config/demo-flows";
+import { isEmail } from "@/lib/demo/demoValidation";
 import type { CategoryId, CategoryOption } from "@/types/category";
 import type { SelectedProduct } from "@/types/experience";
+import type { CheckoutForm, PaymentMethodId } from "@/types/demo";
 
 export default function VoiceController() {
   const micActive = useExperienceStore((s) => s.micActive);
@@ -144,7 +147,62 @@ function runToolCall(name: string, args: Record<string, unknown>): string {
         else return "(The bag is empty — ask the guest to choose a piece first.)";
       }
       store.runCommand({ command: "start-checkout" });
-      return "(Checkout is open. Do NOT announce it — ask the guest for the name on the order.)";
+      return "(Checkout is open on the details screen. Don't announce it — ask for the name, email, and phone for the order.)";
+    }
+    case "set_checkout_details": {
+      // Fill whatever the guest just gave us straight into the form.
+      const patch: Partial<CheckoutForm> = {};
+      if (args.name != null && String(args.name).trim()) patch.name = String(args.name).trim();
+      if (args.email != null && String(args.email).trim()) patch.email = String(args.email).trim();
+      if (args.phone != null && String(args.phone).trim()) patch.phone = String(args.phone).trim();
+      if (Object.keys(patch).length === 0) {
+        return "(No details heard — ask the guest for the name, email, and phone.)";
+      }
+      // Make sure checkout is actually open before writing into it.
+      if (store.demoFlow !== "checkout") {
+        if (store.cart.length === 0) {
+          if (store.selectedProduct) store.addToCart(store.selectedProduct);
+          else return "(The bag is empty — add a piece before taking checkout details.)";
+        }
+        store.runCommand({ command: "start-checkout" });
+      }
+      store.updateCheckout(patch, true);
+      const c = useExperienceStore.getState().checkout;
+      const missing: string[] = [];
+      if (!c.name.trim()) missing.push("name");
+      if (!isEmail(c.email)) missing.push("email");
+      if (!c.phone.trim()) missing.push("phone");
+      if (missing.length > 0) {
+        return `(Filled. Still need their ${missing.join(" and ")} — ask for it; don't read back what you have.)`;
+      }
+      return "(All details are in. Ask if everything looks right and whether they'd like to continue to payment.)";
+    }
+    case "set_payment_method": {
+      const method = String(args.method ?? "");
+      if (!PAYMENT_METHODS.some((m) => m.id === method)) return "(That payment option isn't available.)";
+      store.updateCheckout({ paymentMethod: method as PaymentMethodId }, true);
+      if (useExperienceStore.getState().checkoutStep === "details") store.setCheckoutStep("payment");
+      return "(Payment method set. When the guest is ready, place the order.)";
+    }
+    case "go_to_payment": {
+      const c = useExperienceStore.getState().checkout;
+      const missing: string[] = [];
+      if (!c.name.trim()) missing.push("their name");
+      if (!isEmail(c.email)) missing.push("a valid email");
+      if (!c.phone.trim()) missing.push("a phone number");
+      if (missing.length > 0) {
+        return `(Can't continue yet — still need ${missing.join(" and ")}. Ask for it.)`;
+      }
+      if (store.demoFlow !== "checkout") store.runCommand({ command: "start-checkout" });
+      store.setCheckoutStep("payment");
+      return "(On the payment screen now. Ask the guest how they'd like to pay.)";
+    }
+    case "place_order": {
+      const st = useExperienceStore.getState();
+      if (st.cart.length === 0) return "(The bag is empty — there's nothing to order.)";
+      if (st.checkoutStep === "details") st.setCheckoutStep("payment");
+      void st.placeOrder();
+      return "(Placing the order now — reassure the guest warmly while it completes.)";
     }
     case "book_appointment":
       store.runCommand({ command: "book-appointment" });

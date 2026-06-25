@@ -22,12 +22,27 @@ export interface CartItem {
   qty: number;
 }
 
+/** How the guest chooses to pay. (No real card number is ever transmitted.) */
+export type PaymentMethodId = "card" | "boutique" | "invoice";
+
 export interface CheckoutPayload extends ContactDetails {
   productId: string;
   productName: string;
   priceLabel: string;
-  /** Placeholder choices only — never a real card number. */
-  paymentMethod: "demo-card" | "pay-in-person" | "request-invoice" | "confirm-later";
+  paymentMethod: PaymentMethodId;
+  consent: boolean;
+}
+
+/** The three screens of the checkout journey (+ the transient processing state). */
+export type CheckoutStep = "details" | "payment" | "processing" | "confirmation";
+
+/** Live checkout form state. Lives in the store so the agent can fill it in
+ *  real time via the set_checkout_details / set_payment_method tools. */
+export interface CheckoutForm {
+  name: string;
+  email: string;
+  phone: string;
+  paymentMethod: PaymentMethodId;
   consent: boolean;
 }
 
