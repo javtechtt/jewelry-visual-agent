@@ -7,13 +7,6 @@ export const EASE = {
   soft: [0.4, 0, 0.2, 1] as [number, number, number, number],
 };
 
-/** GSAP-friendly string easings. */
-export const GSAP_EASE = {
-  camera: "power3.inOut",
-  object: "power2.out",
-  bloom: "sine.inOut",
-};
-
 export const DURATION = {
   sceneTransition: 1.5,
   cameraMove: 1.6,

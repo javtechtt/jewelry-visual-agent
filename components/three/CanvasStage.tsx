@@ -30,7 +30,9 @@ export default function CanvasStage({
     <Canvas
       shadows
       dpr={QUALITY[view].dpr}
-      gl={{ antialias: true, powerPreference: "high-performance" }}
+      // antialias:false — the EffectComposer renders to its own targets and does
+      // AA via SMAA, so the canvas's multisampled backbuffer is pure waste.
+      gl={{ antialias: false, powerPreference: "high-performance" }}
       camera={{ position: initial.position, fov: initial.fov, near: 0.1, far: 100 }}
     >
       <SceneCamera />
