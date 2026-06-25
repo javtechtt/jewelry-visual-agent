@@ -250,6 +250,7 @@ function runToolCall(name: string, args: Record<string, unknown>): string {
       if (args.name != null && String(args.name).trim()) patch.name = String(args.name).trim();
       if (args.email != null && String(args.email).trim()) patch.email = String(args.email).trim();
       if (args.phone != null && String(args.phone).trim()) patch.phone = String(args.phone).trim();
+      if (args.notes != null && String(args.notes).trim()) patch.notes = String(args.notes).trim();
       if (Object.keys(patch).length === 0) {
         return "(Nothing to set — ask which day and time suits them.)";
       }

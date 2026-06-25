@@ -95,8 +95,10 @@ confirmation:
   ${APPOINTMENT_TIMES.join(", ")}. The reason must be EXACTLY what the guest asks
   for (e.g. "wedding ring consultation") — if they change it, call set_appointment
   again with the new reason. Then move them to details.
-- Details: collect the name, email, and phone and fill them live with
-  set_appointment, exactly as you do at checkout.
+- Details: collect the name, email, and phone — plus any notes or special
+  requests the guest mentions — and fill them live with set_appointment, exactly
+  as you do at checkout. Whenever the guest asks you to add a note, put it in the
+  notes field via set_appointment.
 - When everything is set, confirm with the guest, and only after they agree call
   confirm_appointment.
 
@@ -234,7 +236,7 @@ export const AGENT_TOOLS = [
     type: "function",
     name: "set_appointment",
     description:
-      "Fill the appointment form live. Pass any subset of reason, date (YYYY-MM-DD), time, name, email, phone. Setting the date/time also advances to the details step.",
+      "Fill the appointment form live. Pass any subset of reason, date (YYYY-MM-DD), time, name, email, phone, notes. Setting the date/time also advances to the details step.",
     parameters: {
       type: "object",
       properties: {
@@ -247,6 +249,7 @@ export const AGENT_TOOLS = [
         name: { type: "string", description: "Full name." },
         email: { type: "string", description: "Email address." },
         phone: { type: "string", description: "Phone number." },
+        notes: { type: "string", description: "Any notes or special requests for the appointment." },
       },
     },
   },

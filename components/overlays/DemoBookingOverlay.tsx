@@ -160,11 +160,23 @@ export default function DemoBookingOverlay() {
               />
               <label className="demo-field">
                 <span className="demo-field__label">Notes (optional)</span>
-                <textarea
+                <motion.textarea
                   className="demo-input demo-input--area"
                   rows={2}
                   value={booking.notes}
                   onChange={(e) => updateBooking({ notes: e.target.value })}
+                  animate={
+                    filled.includes("notes")
+                      ? {
+                          boxShadow: [
+                            "0 0 0 0 rgba(201,169,106,0)",
+                            "0 0 0 3px rgba(201,169,106,0.5)",
+                            "0 0 0 0 rgba(201,169,106,0)",
+                          ],
+                        }
+                      : { boxShadow: "0 0 0 0 rgba(201,169,106,0)" }
+                  }
+                  transition={{ duration: 1.2, ease: "easeOut" }}
                 />
               </label>
             </div>
