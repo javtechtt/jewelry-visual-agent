@@ -20,6 +20,8 @@ interface ProductObjectProps {
   hovered?: boolean;
   focused?: boolean;
   spin?: boolean;
+  /** When false, this object doesn't scale itself on hover (a parent does). */
+  hoverScale?: boolean;
   cutout?: string;
   model?: string;
 }
@@ -106,39 +108,79 @@ function ShapeMesh({ shape, material }: { shape: ProductShape; material: THREE.M
   }
 }
 
-// Plane is sized to fit within this box while preserving the image's aspect
-// ratio, so full-frame internet photos and transparent cutouts both render
-// undistorted on the glass panel.
-const CUTOUT_MAX_W = 0.98;
-const CUTOUT_MAX_H = 1.22;
+// The image fills a fixed rounded rectangle matching the glass case's portrait
+// footprint, so there is never empty space; any aspect ratio is cover-cropped to
+// that shape. Corner radius matches the glass case (0.12).
+const CUTOUT_W = 0.92;
+const CUTOUT_H = 1.21;
+const CUTOUT_RADIUS = 0.12;
+// The two image faces sit just inside the front + back of the glass slab.
+const CUTOUT_FACE_OFFSET = 0.035;
 
-/** Real product image rendered as a 2.5D textured plane. */
+/** A flat rounded-rectangle geometry with UVs remapped to 0..1 over its bounds. */
+function roundedPlaneGeometry(width: number, height: number, radius: number) {
+  const w = width / 2;
+  const h = height / 2;
+  const r = Math.min(radius, w, h);
+  const shape = new THREE.Shape();
+  shape.moveTo(-w + r, -h);
+  shape.lineTo(w - r, -h);
+  shape.quadraticCurveTo(w, -h, w, -h + r);
+  shape.lineTo(w, h - r);
+  shape.quadraticCurveTo(w, h, w - r, h);
+  shape.lineTo(-w + r, h);
+  shape.quadraticCurveTo(-w, h, -w, h - r);
+  shape.lineTo(-w, -h + r);
+  shape.quadraticCurveTo(-w, -h, -w + r, -h);
+  const geometry = new THREE.ShapeGeometry(shape, 16);
+  const pos = geometry.attributes.position;
+  const uv = geometry.attributes.uv;
+  for (let i = 0; i < pos.count; i++) {
+    uv.setXY(i, (pos.getX(i) + w) / width, (pos.getY(i) + h) / height);
+  }
+  uv.needsUpdate = true;
+  return geometry;
+}
+
+// One shared geometry — the cutout footprint is fixed, so it never varies.
+const CUTOUT_GEOMETRY = roundedPlaneGeometry(CUTOUT_W, CUTOUT_H, CUTOUT_RADIUS);
+
+/** Product image shown on BOTH faces of the glass, cover-cropped to fill it. */
 function CutoutPlane({ src }: { src: string }) {
   const texture = useTexture(src);
-
-  const size = useMemo<[number, number]>(() => {
-    const image = texture.image as { width?: number; height?: number } | undefined;
-    const aspect = image?.width && image?.height ? image.width / image.height : 0.82;
-    let width = CUTOUT_MAX_W;
-    let height = width / aspect;
-    if (height > CUTOUT_MAX_H) {
-      height = CUTOUT_MAX_H;
-      width = height * aspect;
-    }
-    return [width, height];
-  }, [texture]);
 
   useEffect(() => {
     texture.colorSpace = THREE.SRGBColorSpace;
     texture.anisotropy = 8;
+    // Cover-crop the texture to the case footprint so it fills with no gaps.
+    const image = texture.image as { width?: number; height?: number } | undefined;
+    const imgAspect =
+      image?.width && image?.height ? image.width / image.height : CUTOUT_W / CUTOUT_H;
+    const planeAspect = CUTOUT_W / CUTOUT_H;
+    if (imgAspect > planeAspect) {
+      const rep = planeAspect / imgAspect;
+      texture.repeat.set(rep, 1);
+      texture.offset.set((1 - rep) / 2, 0);
+    } else {
+      const rep = imgAspect / planeAspect;
+      texture.repeat.set(1, rep);
+      texture.offset.set(0, (1 - rep) / 2);
+    }
     texture.needsUpdate = true;
   }, [texture]);
 
+  // Two single-sided faces (front + back of the case) so the image reads from
+  // either side and never shows an opaque back. dispose={null} keeps the shared
+  // geometry alive across mount/unmount.
   return (
-    <mesh>
-      <planeGeometry args={size} />
-      <meshBasicMaterial map={texture} transparent toneMapped={false} />
-    </mesh>
+    <group>
+      <mesh geometry={CUTOUT_GEOMETRY} position={[0, 0, CUTOUT_FACE_OFFSET]} dispose={null}>
+        <meshBasicMaterial map={texture} transparent toneMapped={false} side={THREE.FrontSide} />
+      </mesh>
+      <mesh geometry={CUTOUT_GEOMETRY} position={[0, 0, -CUTOUT_FACE_OFFSET]} dispose={null}>
+        <meshBasicMaterial map={texture} transparent toneMapped={false} side={THREE.BackSide} />
+      </mesh>
+    </group>
   );
 }
 
@@ -185,6 +227,7 @@ export default function ProductObject({
   hovered = false,
   focused = false,
   spin = true,
+  hoverScale = true,
   cutout,
   model,
 }: ProductObjectProps) {
@@ -210,9 +253,11 @@ export default function ProductObject({
   useFrame((_, delta) => {
     const k = 1 - Math.pow(0.0015, delta);
     if (groupRef.current) {
-      const targetScale = active ? HOVER.scale : 1;
-      const next = THREE.MathUtils.lerp(groupRef.current.scale.x, targetScale, k);
-      groupRef.current.scale.setScalar(next);
+      if (hoverScale) {
+        const targetScale = active ? HOVER.scale : 1;
+        const next = THREE.MathUtils.lerp(groupRef.current.scale.x, targetScale, k);
+        groupRef.current.scale.setScalar(next);
+      }
       if (spin) groupRef.current.rotation.y += delta * (active ? 0.5 : 0.18);
     }
     const targetEmissive = active ? 0.12 * HOVER.emissiveBoost : 0.12;

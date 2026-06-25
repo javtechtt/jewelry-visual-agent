@@ -15,8 +15,10 @@
 import type { CategoryId } from "@/types/category";
 
 // Resize + modern-format params keep the textures light. `auto=format` serves
-// WebP/AVIF where supported; `fit=crop` resizes without distortion.
-const PARAMS = "w=800&q=80&auto=format&fit=crop";
+// WebP/AVIF where supported. We request a PORTRAIT crop (760×1000 ≈ the glass
+// case's 0.95×1.25 footprint) so the images already match the case orientation;
+// CutoutPlane then cover-fits whatever's left so there's never empty space.
+const PARAMS = "w=760&h=1000&q=80&auto=format&fit=crop";
 
 const img = (id: string) => `https://images.unsplash.com/photo-${id}?${PARAMS}`;
 

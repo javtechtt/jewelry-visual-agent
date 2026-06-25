@@ -51,6 +51,9 @@ export default function ProductDisplayPanel({
           clearcoatRoughness={0.18}
           ior={1.3}
           reflectivity={0.4}
+          // Transparent glass must not write depth, or as the case rotates its
+          // sort order flips and it depth-culls the recessed image behind it.
+          depthWrite={false}
         />
       </RoundedBox>
     </group>

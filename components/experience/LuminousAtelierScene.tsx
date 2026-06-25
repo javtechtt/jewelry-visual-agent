@@ -13,6 +13,7 @@ import { getCategoryOptions } from "@/config/category-options";
 import { CATEGORY_MAP } from "@/config/categories";
 import { useExperienceStore } from "@/lib/stores/useExperienceStore";
 import { ATELIER_LAYOUT } from "@/config/scenes";
+import { HOVER } from "@/config/motion";
 import type { CategoryOption } from "@/types/category";
 import type { Vec3 } from "@/types/experience";
 import AgentOrb from "@/components/three/AgentOrb";
@@ -51,20 +52,38 @@ function AtelierOption({
 
   const active = hovered || focused;
 
+  // Spin the case + product together as one display unit, and grow the WHOLE
+  // unit (case included) on hover so the glass scales with the piece.
+  const spinRef = useRef<THREE.Group>(null);
+  useFrame((_, delta) => {
+    if (!spinRef.current) return;
+    const k = 1 - Math.pow(0.0015, delta);
+    const target = active ? HOVER.scale : 1;
+    spinRef.current.scale.setScalar(THREE.MathUtils.lerp(spinRef.current.scale.x, target, k));
+    spinRef.current.rotation.y += delta * (active ? 0.5 : 0.18);
+  });
+
   return (
     <group position={position} scale={scale}>
       <Float speed={1.3} rotationIntensity={0.25} floatIntensity={0.7}>
         <group onPointerOver={onOver} onPointerOut={onOut} onClick={onClick}>
-          <ProductDisplayPanel accent={option.accent} active={active} width={0.95} height={1.25} />
-          <group position={[0, 0.05, 0.16]}>
-            <ProductObject
-              shape={option.shape}
-              accent={option.accent}
-              hovered={hovered}
-              focused={focused}
-              cutout={option.cutout}
-              model={option.model}
-            />
+          {/* Case + product rotate together (option #2) so they stay in sync. */}
+          <group ref={spinRef}>
+            <ProductDisplayPanel accent={option.accent} active={active} width={0.95} height={1.25} />
+            {/* Centered on the glass + spin axis; CutoutPlane renders the image
+                on both faces. spin/hoverScale are handled by the parent group. */}
+            <group position={[0, 0.05, 0]}>
+              <ProductObject
+                shape={option.shape}
+                accent={option.accent}
+                hovered={hovered}
+                focused={focused}
+                spin={false}
+                hoverScale={false}
+                cutout={option.cutout}
+                model={option.model}
+              />
+            </group>
           </group>
           <Html
             center
