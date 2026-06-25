@@ -10,7 +10,9 @@ import { useEffect, useRef } from "react";
 import { RealtimeClient } from "@/lib/realtime/realtimeClient";
 import { useExperienceStore } from "@/lib/stores/useExperienceStore";
 import { getCategoryOptions } from "@/config/category-options";
-import type { CategoryId } from "@/types/category";
+import { CATEGORIES } from "@/config/categories";
+import type { CategoryId, CategoryOption } from "@/types/category";
+import type { SelectedProduct } from "@/types/experience";
 
 export default function VoiceController() {
   const micActive = useExperienceStore((s) => s.micActive);
@@ -52,6 +54,26 @@ export default function VoiceController() {
  * result string the model can read back to the guest. Uses store.getState() so
  * it never needs to be a hook.
  */
+/** Match a spoken name to an option: substring first, then best word overlap. */
+function matchOption(options: CategoryOption[], wanted: string): CategoryOption | undefined {
+  const direct = options.find(
+    (o) => o.name.toLowerCase().includes(wanted) || wanted.includes(o.name.toLowerCase()),
+  );
+  if (direct) return direct;
+  const words = wanted.split(/\s+/).filter((w) => w.length > 2);
+  let best: CategoryOption | undefined;
+  let bestScore = 0;
+  for (const o of options) {
+    const name = o.name.toLowerCase();
+    const score = words.filter((w) => name.includes(w)).length;
+    if (score > bestScore) {
+      bestScore = score;
+      best = o;
+    }
+  }
+  return bestScore > 0 ? best : undefined;
+}
+
 function runToolCall(name: string, args: Record<string, unknown>): string {
   const store = useExperienceStore.getState();
 
@@ -59,17 +81,23 @@ function runToolCall(name: string, args: Record<string, unknown>): string {
     case "show_category": {
       const category = String(args.category ?? "") as CategoryId;
       store.runCommand({ command: "show-category", category });
-      return `Opened the ${category} world.`;
+      return `(Showing ${category}. Invite the guest to look, briefly.)`;
     }
     case "select_product": {
-      const cat = store.activeCategory;
       const wanted = String(args.name ?? "").toLowerCase().trim();
-      if (cat && wanted) {
-        const opt = getCategoryOptions(cat).find(
-          (o) =>
-            o.name.toLowerCase().includes(wanted) || wanted.includes(o.name.toLowerCase()),
-        );
+      if (!wanted) return "Which piece would you like to see?";
+      // Search the active category first, then EVERY category — so the piece is
+      // found even before its category is open, or if the category just changed.
+      const ids = CATEGORIES.map((c) => c.id);
+      const order = store.activeCategory
+        ? [store.activeCategory, ...ids.filter((id) => id !== store.activeCategory)]
+        : ids;
+      for (const catId of order) {
+        const opt = matchOption(getCategoryOptions(catId), wanted);
         if (opt) {
+          if (store.activeCategory !== catId) {
+            store.runCommand({ command: "show-category", category: catId });
+          }
           store.selectProduct({
             id: opt.id,
             categoryId: opt.categoryId,
@@ -79,20 +107,54 @@ function runToolCall(name: string, args: Record<string, unknown>): string {
           return `Selected the ${opt.name}.`;
         }
       }
-      return "I couldn't find that piece in this collection.";
+      return "I couldn't find that piece.";
     }
-    case "start_checkout":
+    case "add_to_cart": {
+      const wanted = String(args.name ?? "").toLowerCase().trim();
+      let piece: SelectedProduct | undefined;
+      if (wanted) {
+        for (const catId of CATEGORIES.map((c) => c.id)) {
+          const opt = matchOption(getCategoryOptions(catId), wanted);
+          if (opt) {
+            piece = { id: opt.id, categoryId: opt.categoryId, name: opt.name, priceLabel: opt.priceLabel };
+            break;
+          }
+        }
+      } else if (store.selectedProduct) {
+        piece = store.selectedProduct;
+      }
+      if (!piece) return "(No piece matched — ask the guest which piece to add.)";
+      store.addToCart(piece);
+      const count = useExperienceStore.getState().cart.reduce((n, i) => n + i.qty, 0);
+      return `(Added the ${piece.name} to the bag — ${count} item${count === 1 ? "" : "s"}. Acknowledge briefly.)`;
+    }
+    case "remove_from_cart": {
+      const wanted = String(args.name ?? "").toLowerCase().trim();
+      const item = store.cart.find(
+        (c) => c.name.toLowerCase().includes(wanted) || wanted.includes(c.name.toLowerCase()),
+      );
+      if (!item) return "(That piece isn't in the bag.)";
+      store.removeFromCart(item.id);
+      return `(Removed the ${item.name} from the bag.)`;
+    }
+    case "start_checkout": {
+      // The bag is the source of truth; if it's empty, fold in the focused piece.
+      if (store.cart.length === 0) {
+        if (store.selectedProduct) store.addToCart(store.selectedProduct);
+        else return "(The bag is empty — ask the guest to choose a piece first.)";
+      }
       store.runCommand({ command: "start-checkout" });
-      return "Opened the demo checkout.";
+      return "(Checkout is open. Do NOT announce it — ask the guest for the name on the order.)";
+    }
     case "book_appointment":
       store.runCommand({ command: "book-appointment" });
-      return "Opened the demo appointment booking.";
+      return "(Booking is open. Don't announce it — guide the guest to pick a time.)";
     case "capture_lead":
       store.runCommand({ command: "request-info" });
-      return "Opened the details form.";
+      return "(The details form is open. Ask for the guest's name and email.)";
     case "connect_human":
       store.runCommand({ command: "connect-human" });
-      return "Opening a concierge handoff.";
+      return "(Connecting a concierge. Reassure the guest a person will be with them shortly.)";
     case "back_to_boutique":
       store.runCommand({ command: "back-to-boutique" });
       return "Back to the boutique window.";

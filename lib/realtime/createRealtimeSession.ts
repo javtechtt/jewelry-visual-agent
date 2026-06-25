@@ -51,6 +51,8 @@ export async function createRealtimeSession(): Promise<RealtimeSessionResponse> 
             },
             output: {
               voice: AGENT.voice,
+              // Slightly brisker than the 1.0 default so Aurelis doesn't drag.
+              speed: 1.1,
             },
           },
           // Function tools let Aurelis actually drive the boutique (navigate
