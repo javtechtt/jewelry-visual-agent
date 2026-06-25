@@ -1117,9 +1117,23 @@ button {
   .chip {
     flex: 0 0 auto;
     scroll-snap-align: center;
-    padding: 0.5rem 0.95rem;
+    display: inline-flex;
+    align-items: center;
+    min-height: 40px;
+    padding: 0.5rem 1.05rem;
     font-size: 0.7rem;
   }
+
+  /* Cart → a thumb-reachable floating bar, never the top-right corner (which on a
+     narrow screen would collide with the category rail + text toggle). */
+  .cart-panel {
+    top: auto;
+    bottom: calc(10.3rem + env(safe-area-inset-bottom));
+    left: max(1rem, env(safe-area-inset-left));
+    right: max(1rem, env(safe-area-inset-right));
+    width: auto;
+  }
+  .cart-list { max-height: 24vh; }
 
   /* Caption sits clear above the action row. */
   .caption-dock {
@@ -1128,17 +1142,29 @@ button {
   }
   .caption { font-size: 1rem; }
 
-  /* Demo-action CTAs: a centred row floating just above the mic. */
+  /* Demo-action CTAs: one thumb-height row that scrolls if it overflows, sitting
+     clear above the mic instead of wrapping down into it. */
   .controls--right {
     left: 0;
     right: 0;
-    justify-content: center;
-    flex-wrap: wrap;
-    gap: 0.4rem;
-    bottom: calc(5.4rem + env(safe-area-inset-bottom));
-    padding: 0 max(1rem, env(safe-area-inset-right)) 0 max(1rem, env(safe-area-inset-left));
+    justify-content: flex-start;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x proximity;
+    gap: 0.5rem;
+    bottom: calc(6.6rem + env(safe-area-inset-bottom));
+    padding: 0.2rem max(1rem, env(safe-area-inset-right)) 0.2rem max(1rem, env(safe-area-inset-left));
   }
-  .action-btn { padding: 0.5rem 0.85rem; font-size: 0.66rem; }
+  .controls--right::-webkit-scrollbar { display: none; }
+  .action-btn {
+    flex: 0 0 auto;
+    scroll-snap-align: start;
+    min-height: 42px;
+    padding: 0.62rem 1rem;
+    font-size: 0.66rem;
+  }
 
   /* Context cluster (Boutique / Start over): stacked in the bottom-left corner,
      clear of the centred mic orb. */
@@ -1150,7 +1176,13 @@ button {
     align-items: flex-start;
     gap: 0.4rem;
   }
-  .ghost-btn { padding: 0.42rem 0.72rem; font-size: 0.6rem; }
+  .ghost-btn {
+    display: inline-flex;
+    align-items: center;
+    min-height: 40px;
+    padding: 0.5rem 0.95rem;
+    font-size: 0.62rem;
+  }
 
   /* Mic dock — primary control, anchored bottom-centre above the home bar. */
   .mic-dock { bottom: calc(1rem + env(safe-area-inset-bottom)); }
