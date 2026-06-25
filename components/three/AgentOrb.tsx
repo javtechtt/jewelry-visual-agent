@@ -22,6 +22,7 @@ import * as THREE from "three";
 import { useExperienceStore } from "@/lib/stores/useExperienceStore";
 import { AGENT } from "@/config/agent";
 import { getSceneOrb } from "@/config/scenes";
+import { speechLevel } from "@/lib/realtime/audioLevel";
 
 // Fresnel rim glow — bright at the silhouette edge, transparent through the
 // centre, so the orb reads as a luminous, volumetric presence rather than a
@@ -83,6 +84,8 @@ export default function AgentOrb() {
   const orbNdc = useMemo(() => new THREE.Vector3(), []);
   // Smoothed 0..1 cursor-proximity flare.
   const flareRef = useRef(0);
+  // Smoothed 0..1 live speech amplitude (drives the speech-synced pulse).
+  const speechRef = useRef(0);
 
   // Custom Fresnel aura material (animated via its uniforms in the frame loop).
   const auraMaterial = useMemo(
@@ -134,6 +137,13 @@ export default function AgentOrb() {
     flareRef.current = THREE.MathUtils.lerp(flareRef.current, flareTarget, k * 0.5);
     const flare = flareRef.current;
 
+    // ---- Live speech pulse ----------------------------------------------
+    // Aurelis's actual voice amplitude (0..1), only while she is speaking, so
+    // the orb throbs in time with the words rather than on a fixed sine.
+    const voiceTarget = agentState === "speaking" ? speechLevel.value : 0;
+    speechRef.current = THREE.MathUtils.lerp(speechRef.current, voiceTarget, k * 0.7);
+    const voice = speechRef.current;
+
     const speed =
       (agentState === "speaking"
         ? 3.4
@@ -147,7 +157,8 @@ export default function AgentOrb() {
     const pulse =
       baseEmissive +
       Math.sin(t * speed) * (agentState === "speaking" ? 1.1 : 0.5) +
-      flare * 1.1;
+      flare * 1.1 +
+      voice * 2.4;
 
     const stateColor =
       agentState === "listening"
@@ -170,7 +181,10 @@ export default function AgentOrb() {
     const auraBase =
       agentState === "speaking" ? 4.2 : agentState === "listening" ? 3.3 : 2.6;
     auraMaterial.uniforms.uIntensity.value =
-      auraBase + Math.sin(t * speed) * (agentState === "idle" ? 0.2 : 0.45) + flare * 2.0;
+      auraBase +
+      Math.sin(t * speed) * (agentState === "idle" ? 0.2 : 0.45) +
+      flare * 2.0 +
+      voice * 2.6;
     // Lower power = wider, softer glow as the cursor approaches.
     auraMaterial.uniforms.uPower.value = 2.6 - flare * 0.8;
     colorTarget.set(stateColor);
@@ -224,13 +238,13 @@ export default function AgentOrb() {
     // Point light spills the orb's glow onto nearby glass + products.
     if (lightRef.current) {
       lightRef.current.intensity =
-        (agentState === "idle" ? 1.0 : 1.5) + Math.sin(t * speed) * 0.3 + flare * 1.1;
+        (agentState === "idle" ? 1.0 : 1.5) + Math.sin(t * speed) * 0.3 + flare * 1.1 + voice * 1.3;
       lightRef.current.color.lerp(colorTarget, k * 0.5);
     }
 
-    // The whole presence swells subtly toward the cursor.
+    // The whole presence swells subtly toward the cursor and with each phrase.
     if (flareGroupRef.current) {
-      flareGroupRef.current.scale.setScalar(1 + flare * 0.07);
+      flareGroupRef.current.scale.setScalar(1 + flare * 0.07 + voice * 0.14);
     }
   });
 

@@ -13,6 +13,7 @@ import type {
   RealtimeStatus,
 } from "@/types/voice";
 import { VoiceFallback } from "./voiceFallback";
+import { speechLevel } from "./audioLevel";
 
 interface RealtimeClientHandlers {
   onStatus?: (status: RealtimeStatus) => void;
@@ -33,6 +34,8 @@ export class RealtimeClient {
   private stream: MediaStream | null = null;
   private audioEl: HTMLAudioElement | null = null;
   private assistantTranscript = "";
+  private audioCtx: AudioContext | null = null;
+  private levelRAF = 0;
 
   constructor(handlers: RealtimeClientHandlers = {}) {
     this.handlers = handlers;
@@ -97,6 +100,7 @@ export class RealtimeClient {
     this.audioEl = audioEl;
     pc.ontrack = (event) => {
       audioEl.srcObject = event.streams[0];
+      this.startLevelMeter(event.streams[0]);
     };
 
     // Microphone input.
@@ -206,6 +210,57 @@ export class RealtimeClient {
     this.send({ type: "response.create" });
   }
 
+  /**
+   * Tap Aurelis's audio track with a Web Audio analyser and publish a smoothed
+   * 0..1 amplitude to speechLevel each animation frame, so the orb can pulse in
+   * time with the actual voice. The analyser is NOT connected to the
+   * destination — the <audio> element already plays the sound.
+   */
+  private startLevelMeter(stream: MediaStream) {
+    try {
+      const Ctx =
+        window.AudioContext ||
+        (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+      if (!Ctx) return;
+      const ctx = new Ctx();
+      this.audioCtx = ctx;
+      void ctx.resume?.();
+      const source = ctx.createMediaStreamSource(stream);
+      const analyser = ctx.createAnalyser();
+      analyser.fftSize = 256;
+      analyser.smoothingTimeConstant = 0.8;
+      source.connect(analyser);
+      const data = new Uint8Array(analyser.frequencyBinCount);
+      const tick = () => {
+        analyser.getByteTimeDomainData(data);
+        let sum = 0;
+        for (let i = 0; i < data.length; i += 1) {
+          const v = (data[i] - 128) / 128;
+          sum += v * v;
+        }
+        const rms = Math.sqrt(sum / data.length);
+        // Lift typical speech to a satisfying pulse, clamped to 0..1.
+        speechLevel.value = Math.min(1, rms * 3.2);
+        this.levelRAF = requestAnimationFrame(tick);
+      };
+      tick();
+    } catch {
+      /* analyser is optional eye-candy — ignore if the browser blocks it */
+    }
+  }
+
+  private stopLevelMeter() {
+    if (this.levelRAF) {
+      cancelAnimationFrame(this.levelRAF);
+      this.levelRAF = 0;
+    }
+    if (this.audioCtx) {
+      this.audioCtx.close().catch(() => {});
+      this.audioCtx = null;
+    }
+    speechLevel.value = 0;
+  }
+
   private startFallback() {
     this.fallback = new VoiceFallback({
       onTranscript: (text) => this.handlers.onTranscript?.(text),
@@ -221,6 +276,7 @@ export class RealtimeClient {
   disconnect(): void {
     this.fallback?.stop();
     this.fallback = null;
+    this.stopLevelMeter();
     this.stream?.getTracks().forEach((track) => track.stop());
     this.stream = null;
     if (this.channel) {

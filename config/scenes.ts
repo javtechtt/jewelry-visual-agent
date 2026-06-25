@@ -41,7 +41,10 @@ export const SCENES: Record<SceneId, SceneDef> = {
       target: [0, 0.45, 0],
       fov: 40,
     },
-    orb: { position: [0, 0.45, 0], scale: 1.25 },
+    // Sits back at the centre of the orbiting panel ring (which is offset to
+    // z = -0.3 in LuminousAtelierScene) so the orb reads as nested among the
+    // panels rather than floating in front of them.
+    orb: { position: [0, 0.45, -0.45], scale: 1.15 },
     atmosphere: { top: "#fdfaf4", bottom: "#f0e9f2" },
   },
 };
@@ -95,11 +98,11 @@ const SCENE_VIEWS: Record<SceneId, Record<ViewMode, SceneView>> = {
     },
     landscape: {
       camera: { position: [0, 0.4, 7.4], target: [0, 0.42, 0], fov: 44 },
-      orb: { position: [0, 0.45, 0], scale: 1.08 },
+      orb: { position: [0, 0.45, -0.45], scale: 1.0 },
     },
     portrait: {
       camera: { position: [0, 0.4, 8.6], target: [0, 0.45, 0], fov: 46 },
-      orb: { position: [0, 0.5, 0], scale: 0.8 },
+      orb: { position: [0, 0.5, -0.45], scale: 0.74 },
     },
   },
 };
