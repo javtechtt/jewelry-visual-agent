@@ -2,6 +2,8 @@
 // the spoken greeting lines, and (critically) the system instructions handed to
 // the OpenAI Realtime session created in app/api/realtime-session/route.ts.
 
+import { CATEGORIES } from "./categories";
+
 export const AGENT = {
   name: "Aurelis",
   /** Realtime voice id. Swap to a supported gpt-realtime-2 voice as needed. */
@@ -47,4 +49,77 @@ explain that in production a team member would receive the request.
 
 Available actions you can trigger via tools: show_category, select_product,
 start_checkout, book_appointment, capture_lead, connect_human, back_to_boutique,
-start_over.`;
+start_over. Call the matching tool whenever the guest asks for one of these —
+don't just describe it. Keep narrating warmly as you do.`;
+
+/**
+ * Function tools the Realtime model can call to drive the boutique. Names match
+ * AGENT_INSTRUCTIONS; the handlers live in components/voice/VoiceController.tsx.
+ * The category enum is derived from CATEGORIES so it can never drift.
+ */
+export const AGENT_TOOLS = [
+  {
+    type: "function",
+    name: "show_category",
+    description: "Open one of the boutique's product category worlds.",
+    parameters: {
+      type: "object",
+      properties: {
+        category: {
+          type: "string",
+          enum: CATEGORIES.map((c) => c.id),
+          description: "Which category world to open.",
+        },
+      },
+      required: ["category"],
+    },
+  },
+  {
+    type: "function",
+    name: "select_product",
+    description: "Focus/select a specific product in the current category, by name.",
+    parameters: {
+      type: "object",
+      properties: {
+        name: { type: "string", description: "The product name as presented to the guest." },
+      },
+      required: ["name"],
+    },
+  },
+  {
+    type: "function",
+    name: "start_checkout",
+    description: "Open the demo checkout flow for the selected piece.",
+    parameters: { type: "object", properties: {} },
+  },
+  {
+    type: "function",
+    name: "book_appointment",
+    description: "Open the demo private-appointment booking flow.",
+    parameters: { type: "object", properties: {} },
+  },
+  {
+    type: "function",
+    name: "capture_lead",
+    description: "Open the demo form to capture the guest's contact details.",
+    parameters: { type: "object", properties: {} },
+  },
+  {
+    type: "function",
+    name: "connect_human",
+    description: "Open the demo human-concierge handoff.",
+    parameters: { type: "object", properties: {} },
+  },
+  {
+    type: "function",
+    name: "back_to_boutique",
+    description: "Return to the main boutique window.",
+    parameters: { type: "object", properties: {} },
+  },
+  {
+    type: "function",
+    name: "start_over",
+    description: "Reset the whole experience to the beginning.",
+    parameters: { type: "object", properties: {} },
+  },
+];

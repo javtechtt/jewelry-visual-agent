@@ -1,4 +1,4 @@
-// SERVER-ONLY helper that mints an ephemeral OpenAI Realtime session using the
+// SERVER-ONLY helper that mints an ephemeral OpenAI Realtime client secret using the
 // secret OPENAI_API_KEY. The browser never sees OPENAI_API_KEY — only the
 // short-lived client secret returned inside `session`.
 //
@@ -6,11 +6,11 @@
 // If no key is configured, this returns mode:"mock" so the UI can gracefully
 // fall back to browser speech / text input.
 
-import { AGENT, AGENT_INSTRUCTIONS } from "@/config/agent";
+import { AGENT, AGENT_INSTRUCTIONS, AGENT_TOOLS } from "@/config/agent";
 import type { RealtimeSessionResponse } from "@/types/voice";
 
 const REALTIME_MODEL = process.env.NEXT_PUBLIC_REALTIME_MODEL?.trim() || "gpt-realtime-2";
-const SESSIONS_URL = "https://api.openai.com/v1/realtime/sessions";
+const CLIENT_SECRETS_URL = "https://api.openai.com/v1/realtime/client_secrets";
 
 export async function createRealtimeSession(): Promise<RealtimeSessionResponse> {
   const apiKey = process.env.OPENAI_API_KEY?.trim();
@@ -24,18 +24,40 @@ export async function createRealtimeSession(): Promise<RealtimeSessionResponse> 
   }
 
   try {
-    const response = await fetch(SESSIONS_URL, {
+    const response = await fetch(CLIENT_SECRETS_URL, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
-        "OpenAI-Beta": "realtime=v1",
+        "OpenAI-Safety-Identifier": "aurelis-demo-user",
       },
       body: JSON.stringify({
-        model: REALTIME_MODEL,
-        voice: AGENT.voice,
-        instructions: AGENT_INSTRUCTIONS,
-        modalities: ["audio", "text"],
+        expires_after: {
+          anchor: "created_at",
+          seconds: 600,
+        },
+        session: {
+          type: "realtime",
+          model: REALTIME_MODEL,
+          instructions: AGENT_INSTRUCTIONS,
+          output_modalities: ["audio"],
+          audio: {
+            input: {
+              // Transcribe the guest's speech so captions + (fallback) intent
+              // matching have something to work with.
+              transcription: { model: "gpt-4o-mini-transcribe" },
+              // Server-side voice-activity detection drives turn taking.
+              turn_detection: { type: "server_vad" },
+            },
+            output: {
+              voice: AGENT.voice,
+            },
+          },
+          // Function tools let Aurelis actually drive the boutique (navigate
+          // categories, open demo flows, etc.) — see config/agent.ts.
+          tools: AGENT_TOOLS,
+          tool_choice: "auto",
+        },
       }),
       // Realtime sessions are short-lived; never cache them.
       cache: "no-store",

@@ -25,12 +25,12 @@ Browser (mic)                     Next.js server                 OpenAI
 ─────────────                     ──────────────                 ──────
 RealtimeClient.connect()
    │  POST /api/realtime-session ───────►  createRealtimeSession()
-   │                                          │  POST /v1/realtime/sessions
+   │                                          │  POST /v1/realtime/client_secrets
    │                                          │  (Authorization: OPENAI_API_KEY)
    │                                          └──────────────────────► (ephemeral
    │  ◄──── { mode:"live", session } ◄────────  returns client_secret )  secret)
    │
-   │  WebRTC offer (SDP) ──────────────────────────────────────────►  /v1/realtime
+   │  WebRTC offer (SDP) ──────────────────────────────────────────►  /v1/realtime/calls
    │  ◄──────────────────────────── answer (SDP) ──────────────────
    ▼
  audio + data channel (transcripts → intents → store.runCommand)
@@ -73,5 +73,4 @@ Visit `http://localhost:3000/api/realtime-session` (GET) — you'll see
   `realtimeClient.handleRealtimeEvent` to drive store actions directly (the
   hook + `TODO(production)` marker are already in place).
 - Rate-limit `/api/realtime-session` and scope ephemeral tokens.
-- Confirm the exact session-creation endpoint/params for `gpt-realtime-2` in the
-  current OpenAI docs and adjust `createRealtimeSession.ts` if needed.
+- Add a real checkout provider if this moves beyond the demo-safe prototype.
