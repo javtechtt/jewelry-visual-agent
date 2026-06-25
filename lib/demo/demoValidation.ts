@@ -40,13 +40,14 @@ export function validateCheckout(payload: Partial<CheckoutPayload>): ValidationE
 
 export function validateBooking(payload: Partial<BookingPayload>): ValidationErrors {
   const errors = validateContact(payload);
-  if (!payload.date) errors.date = "Pick a demo slot.";
+  if (!payload.date) errors.date = "Please choose a date.";
+  if (!payload.time) errors.time = "Please choose a time.";
   return errors;
 }
 
 export function validateLead(payload: Partial<LeadPayload>): ValidationErrors {
   const errors = validateContact(payload);
-  if (!payload.consent) errors.consent = "Please acknowledge the demo notice.";
+  if (!payload.consent) errors.consent = "Please acknowledge to continue.";
   return errors;
 }
 

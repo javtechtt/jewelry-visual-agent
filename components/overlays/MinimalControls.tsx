@@ -13,7 +13,6 @@ export default function MinimalControls() {
   const activeCategory = useExperienceStore((s) => s.activeCategory);
   const enterCategory = useExperienceStore((s) => s.enterCategory);
   const backToBoutique = useExperienceStore((s) => s.backToBoutique);
-  const startOver = useExperienceStore((s) => s.startOver);
   const openDemoFlow = useExperienceStore((s) => s.openDemoFlow);
 
   const inAtelier = scene === "luminous-atelier";
@@ -48,9 +47,6 @@ export default function MinimalControls() {
             ← Boutique
           </button>
         )}
-        <button type="button" className="ghost-btn ghost-btn--subtle" onClick={startOver}>
-          Start over
-        </button>
       </div>
 
       {/* Bottom-right action cluster (demo-safe) */}

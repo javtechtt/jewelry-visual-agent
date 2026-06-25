@@ -91,10 +91,10 @@ export default function LeadCaptureOverlay() {
           </Field>
           <label className="demo-consent">
             <input type="checkbox" checked={Boolean(form.consent)} onChange={(e) => set({ consent: e.target.checked })} />
-            <span>I'm happy for a stylist to follow up (demo — nothing is sent).</span>
+            <span>I'm happy for a stylist to follow up.</span>
           </label>
           {errors.consent && <span className="demo-field__error">{errors.consent}</span>}
-          <StepFooter onNext={submit} nextLabel="Submit (demo)" />
+          <StepFooter onNext={submit} nextLabel="Submit" />
         </>
       )}
 

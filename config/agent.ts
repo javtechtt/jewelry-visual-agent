@@ -4,7 +4,7 @@
 
 import { CATEGORIES } from "./categories";
 import { CATEGORY_OPTIONS } from "./category-options";
-import { PAYMENT_METHODS } from "./demo-flows";
+import { APPOINTMENT_TIMES, PAYMENT_METHODS } from "./demo-flows";
 
 export const AGENT = {
   name: "Aurelis",
@@ -24,7 +24,7 @@ export const AGENT = {
     enterCategory: (label: string) => `Stepping into ${label}.`,
     selectProduct: (name: string) => `A beautiful choice — the ${name}.`,
     checkout: "I've prepared your private checkout.",
-    booking: "Let's arrange a private appointment. These are demo time slots.",
+    booking: "Let's arrange a private appointment for you.",
     lead: "I'll note your details so a stylist can follow up.",
     handoff: "Connecting you with a human concierge.",
     back: "Returning to the boutique window.",
@@ -72,15 +72,29 @@ whole way:
   all three are in, warmly ask if everything looks right and whether they'd like
   to continue to payment; only when they agree, call go_to_payment.
 - Payment: ask how they'd like to pay and call set_payment_method when they
-  choose. When they're ready, call place_order.
+  choose. If they pay by card, take the card number, expiry, and CVC and fill
+  them live with set_payment_details the moment you hear each — again, do not
+  read values back. When everything is filled, ALWAYS confirm with the guest
+  that they'd like to place the order; only AFTER they say yes do you call
+  place_order. Never place the order on your own initiative.
 - Confirmation: congratulate them simply and warmly, and invite them to keep
   exploring.
 
+APPOINTMENTS use a live calendar with three screens — schedule, details,
+confirmation:
+- Schedule: a calendar of dates and a set of times is on screen. Ask which day
+  and time suits them and call set_appointment with the date (as YYYY-MM-DD) and
+  a time from: ${APPOINTMENT_TIMES.join(", ")}. Then move them to details.
+- Details: collect the name, email, and phone and fill them live with
+  set_appointment, exactly as you do at checkout.
+- When everything is set, confirm with the guest, and only after they agree call
+  confirm_appointment.
+
 Always call the matching tool when the guest asks for something — don't just
 describe it. Tools: show_category, select_product, add_to_cart, remove_from_cart,
-start_checkout, set_checkout_details, set_payment_method, go_to_payment,
-place_order, book_appointment, capture_lead, connect_human, back_to_boutique,
-start_over.`;
+start_checkout, set_checkout_details, set_payment_method, set_payment_details,
+go_to_payment, place_order, book_appointment, set_appointment, confirm_appointment,
+capture_lead, connect_human, back_to_boutique, start_over.`;
 
 /**
  * Function tools the Realtime model can call to drive the boutique. Names match
@@ -174,6 +188,20 @@ export const AGENT_TOOLS = [
   },
   {
     type: "function",
+    name: "set_payment_details",
+    description:
+      "Fill the card fields on the payment screen, live as the guest speaks. Pass any subset of cardNumber, expiry (MM/YY), cvc. Do NOT read values back.",
+    parameters: {
+      type: "object",
+      properties: {
+        cardNumber: { type: "string", description: "Card number digits." },
+        expiry: { type: "string", description: "Expiry date, MM/YY." },
+        cvc: { type: "string", description: "Card security code." },
+      },
+    },
+  },
+  {
+    type: "function",
     name: "go_to_payment",
     description:
       "Advance from the details screen to the payment screen. Only after the guest confirms their details look right.",
@@ -182,13 +210,37 @@ export const AGENT_TOOLS = [
   {
     type: "function",
     name: "place_order",
-    description: "Place the order from the payment screen and show the confirmation.",
+    description:
+      "Place the order from the payment screen. Only call this AFTER the guest has explicitly confirmed they want to place the order.",
     parameters: { type: "object", properties: {} },
   },
   {
     type: "function",
     name: "book_appointment",
-    description: "Open the demo private-appointment booking flow.",
+    description: "Open the private-appointment booking flow with its live calendar.",
+    parameters: { type: "object", properties: {} },
+  },
+  {
+    type: "function",
+    name: "set_appointment",
+    description:
+      "Fill the appointment form live. Pass any subset of date (YYYY-MM-DD), time, name, email, phone. Setting the date/time also advances to the details step.",
+    parameters: {
+      type: "object",
+      properties: {
+        date: { type: "string", description: "Appointment date as YYYY-MM-DD." },
+        time: { type: "string", description: `Appointment time, one of: ${APPOINTMENT_TIMES.join(", ")}.` },
+        name: { type: "string", description: "Full name." },
+        email: { type: "string", description: "Email address." },
+        phone: { type: "string", description: "Phone number." },
+      },
+    },
+  },
+  {
+    type: "function",
+    name: "confirm_appointment",
+    description:
+      "Confirm and book the appointment. Only call this AFTER the guest has explicitly confirmed.",
     parameters: { type: "object", properties: {} },
   },
   {

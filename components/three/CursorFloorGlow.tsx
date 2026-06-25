@@ -14,10 +14,15 @@ import { useEffect, useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { useExperienceStore } from "@/lib/stores/useExperienceStore";
-import { AGENT } from "@/config/agent";
 
 // Sits just above the reflective floor (which is at y = -0.9) to avoid z-fight.
 const FLOOR_Y = -0.88;
+
+// Dedicated, saturated glow tones (NOT the near-white orb colours) so the pool
+// reads as a soft tinted champagne wash on the floor instead of a white blowout.
+const GLOW_IDLE = "#c79a52"; // warm champagne gold
+const GLOW_LISTENING = "#8fb3cf"; // soft dusty blue
+const GLOW_SPEAKING = "#d2a35d"; // warm amber
 
 const VERT = /* glsl */ `
   varying vec2 vUv;
@@ -33,7 +38,8 @@ const FRAG = /* glsl */ `
   varying vec2 vUv;
   void main() {
     float d = distance(vUv, vec2(0.5)) * 2.0; // 0 at centre, 1 at disc edge
-    float a = pow(smoothstep(1.0, 0.0, d), 1.7);
+    // Higher exponent = a more feathered, gentle pool with no hot core.
+    float a = pow(smoothstep(1.0, 0.0, d), 2.6);
     gl_FragColor = vec4(uColor * uIntensity, a);
   }
 `;
@@ -47,8 +53,8 @@ export default function CursorFloorGlow() {
     () =>
       new THREE.ShaderMaterial({
         uniforms: {
-          uColor: { value: new THREE.Color(AGENT.visual.glowColor) },
-          uIntensity: { value: 1.0 },
+          uColor: { value: new THREE.Color(GLOW_IDLE) },
+          uIntensity: { value: 0.5 },
         },
         vertexShader: VERT,
         fragmentShader: FRAG,
@@ -68,7 +74,8 @@ export default function CursorFloorGlow() {
   const colorTarget = useMemo(() => new THREE.Color(), []);
 
   useFrame((state, delta) => {
-    const k = 1 - Math.pow(0.0016, delta);
+    // Slower trail than before → the pool drifts after the cursor, softer feel.
+    const k = 1 - Math.pow(0.05, delta);
 
     // Project the cursor onto the floor plane → world position to follow.
     state.raycaster.setFromCamera(state.pointer, state.camera);
@@ -83,21 +90,21 @@ export default function CursorFloorGlow() {
 
     const stateColor =
       agentState === "listening"
-        ? AGENT.visual.listeningColor
+        ? GLOW_LISTENING
         : agentState === "speaking"
-          ? AGENT.visual.speakingColor
-          : AGENT.visual.glowColor;
+          ? GLOW_SPEAKING
+          : GLOW_IDLE;
     colorTarget.set(stateColor);
-    material.uniforms.uColor.value.lerp(colorTarget, k * 0.5);
+    material.uniforms.uColor.value.lerp(colorTarget, k * 0.4);
 
-    // Gentle breath; brighter while Aurelis is active.
+    // Very gentle breath at low intensity so it never reads as a white hotspot.
     const t = state.clock.elapsedTime;
-    const base = agentState === "idle" ? 0.95 : 1.15;
-    material.uniforms.uIntensity.value = base + Math.sin(t * 1.6) * 0.12;
+    const base = agentState === "idle" ? 0.42 : 0.55;
+    material.uniforms.uIntensity.value = base + Math.sin(t * 1.1) * 0.05;
 
     if (lightRef.current) {
       lightRef.current.position.set(target.x, FLOOR_Y + 0.6, target.z);
-      lightRef.current.color.lerp(colorTarget, k * 0.5);
+      lightRef.current.color.lerp(colorTarget, k * 0.4);
     }
   });
 
@@ -109,8 +116,8 @@ export default function CursorFloorGlow() {
       {/* Faint up-light so items catch the glow from beneath as it passes. */}
       <pointLight
         ref={lightRef}
-        color={AGENT.visual.glowColor}
-        intensity={0.5}
+        color={GLOW_IDLE}
+        intensity={0.3}
         distance={4.5}
         decay={2}
         position={[0, FLOOR_Y + 0.6, 0]}

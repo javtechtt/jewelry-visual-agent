@@ -89,7 +89,7 @@ export default function HandoffOverlay() {
           <Field label="Phone" name="phone" errors={errors}>
             <input className="demo-input" value={form.phone ?? ""} onChange={(e) => set({ phone: e.target.value })} />
           </Field>
-          <StepFooter onNext={submit} nextLabel="Connect (demo)" />
+          <StepFooter onNext={submit} nextLabel="Connect" />
         </>
       )}
 

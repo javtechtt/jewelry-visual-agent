@@ -46,6 +46,29 @@ export interface CheckoutForm {
   consent: boolean;
 }
 
+/** Card entry on the payment screen. Held in the store so the agent can fill it
+ *  live, but NEVER included in any receipt or sent anywhere — it is discarded
+ *  when checkout resets. */
+export interface CardDetails {
+  number: string;
+  exp: string;
+  cvc: string;
+}
+
+/** The booking journey screens (+ the transient processing state). */
+export type BookingStep = "schedule" | "details" | "processing" | "confirmation";
+
+/** Live appointment form. Lives in the store so the agent can fill the date,
+ *  time, and contact details in real time. `date` is an ISO yyyy-mm-dd string. */
+export interface BookingForm {
+  date: string;
+  time: string;
+  name: string;
+  email: string;
+  phone: string;
+  notes: string;
+}
+
 export interface BookingPayload extends ContactDetails {
   categoryId: CategoryId | "general";
   service: string;

@@ -13,9 +13,10 @@ import { getCategoryOptions } from "@/config/category-options";
 import { CATEGORIES } from "@/config/categories";
 import { PAYMENT_METHODS } from "@/config/demo-flows";
 import { isEmail } from "@/lib/demo/demoValidation";
+import { formatCardNumber, formatCvc, formatExpiry } from "@/lib/demo/cardFormat";
 import type { CategoryId, CategoryOption } from "@/types/category";
 import type { SelectedProduct } from "@/types/experience";
-import type { CheckoutForm, PaymentMethodId } from "@/types/demo";
+import type { BookingForm, CardDetails, CheckoutForm, PaymentMethodId } from "@/types/demo";
 
 export default function VoiceController() {
   const micActive = useExperienceStore((s) => s.micActive);
@@ -75,6 +76,17 @@ function matchOption(options: CategoryOption[], wanted: string): CategoryOption 
     }
   }
   return bestScore > 0 ? best : undefined;
+}
+
+/** Normalize a spoken/typed date into a calendar ISO string (yyyy-mm-dd). */
+function normalizeDate(input: string): string | null {
+  const s = input.trim();
+  const d = /^\d{4}-\d{2}-\d{2}$/.test(s) ? new Date(`${s}T00:00:00`) : new Date(s);
+  if (Number.isNaN(d.getTime())) return null;
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
 }
 
 function runToolCall(name: string, args: Record<string, unknown>): string {
@@ -197,6 +209,25 @@ function runToolCall(name: string, args: Record<string, unknown>): string {
       store.setCheckoutStep("payment");
       return "(On the payment screen now. Ask the guest how they'd like to pay.)";
     }
+    case "set_payment_details": {
+      if (store.demoFlow !== "checkout") {
+        return "(Checkout isn't open yet — take the order details first.)";
+      }
+      const patch: Partial<CardDetails> = {};
+      if (args.cardNumber != null && String(args.cardNumber).trim()) {
+        patch.number = formatCardNumber(String(args.cardNumber));
+      }
+      if (args.expiry != null && String(args.expiry).trim()) patch.exp = formatExpiry(String(args.expiry));
+      if (args.cvc != null && String(args.cvc).trim()) patch.cvc = formatCvc(String(args.cvc));
+      if (Object.keys(patch).length === 0) {
+        return "(No card details heard — ask for the card number, expiry, and security code.)";
+      }
+      // Make sure we're on the payment screen with the card method selected.
+      store.updateCheckout({ paymentMethod: "card" });
+      if (useExperienceStore.getState().checkoutStep !== "payment") store.setCheckoutStep("payment");
+      store.updateCard(patch, true);
+      return "(Card details filled. When everything's in, confirm with the guest before placing the order.)";
+    }
     case "place_order": {
       const st = useExperienceStore.getState();
       if (st.cart.length === 0) return "(The bag is empty — there's nothing to order.)";
@@ -206,7 +237,49 @@ function runToolCall(name: string, args: Record<string, unknown>): string {
     }
     case "book_appointment":
       store.runCommand({ command: "book-appointment" });
-      return "(Booking is open. Don't announce it — guide the guest to pick a time.)";
+      return "(The calendar is open. Don't announce it — ask which day and time suits them.)";
+    case "set_appointment": {
+      if (store.demoFlow !== "booking") store.runCommand({ command: "book-appointment" });
+      const patch: Partial<BookingForm> = {};
+      if (args.date != null && String(args.date).trim()) {
+        const iso = normalizeDate(String(args.date));
+        if (iso) patch.date = iso;
+      }
+      if (args.time != null && String(args.time).trim()) patch.time = String(args.time).trim();
+      if (args.name != null && String(args.name).trim()) patch.name = String(args.name).trim();
+      if (args.email != null && String(args.email).trim()) patch.email = String(args.email).trim();
+      if (args.phone != null && String(args.phone).trim()) patch.phone = String(args.phone).trim();
+      if (Object.keys(patch).length === 0) {
+        return "(Nothing to set — ask which day and time suits them.)";
+      }
+      store.updateBooking(patch, true);
+      const b = useExperienceStore.getState().booking;
+      // Once a day and time are chosen, move on to collecting contact details.
+      if (b.date && b.time && useExperienceStore.getState().bookingStep === "schedule") {
+        store.setBookingStep("details");
+      }
+      if (!b.date || !b.time) return "(Set. Ask for whichever of the day or time is still missing.)";
+      const missing: string[] = [];
+      if (!b.name.trim()) missing.push("name");
+      if (!isEmail(b.email)) missing.push("email");
+      if (!b.phone.trim()) missing.push("phone");
+      if (missing.length > 0) {
+        return `(Booked for ${b.date} at ${b.time}. Still need their ${missing.join(" and ")}.)`;
+      }
+      return "(Everything's set. Confirm with the guest, then book it.)";
+    }
+    case "confirm_appointment": {
+      const b = useExperienceStore.getState().booking;
+      const missing: string[] = [];
+      if (!b.date) missing.push("a date");
+      if (!b.time) missing.push("a time");
+      if (!b.name.trim()) missing.push("their name");
+      if (!isEmail(b.email)) missing.push("a valid email");
+      if (!b.phone.trim()) missing.push("a phone number");
+      if (missing.length > 0) return `(Can't book yet — still need ${missing.join(", ")}.)`;
+      void useExperienceStore.getState().confirmBooking();
+      return "(Booking the appointment now — reassure the guest warmly.)";
+    }
     case "capture_lead":
       store.runCommand({ command: "request-info" });
       return "(The details form is open. Ask for the guest's name and email.)";

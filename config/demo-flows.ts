@@ -26,23 +26,23 @@ export const DEMO_FLOWS: Record<DemoFlowId, DemoFlowConfig> = {
   booking: {
     id: "booking",
     title: "Book an Appointment",
-    subtitle: "Choose a demo time for your private viewing.",
-    referencePrefix: "DEMO-APT",
-    safeNote: "This prototype simulates the booking flow. No real appointment is reserved.",
+    subtitle: "Choose a date and time for your private viewing.",
+    referencePrefix: "APT",
+    safeNote: "",
   },
   lead: {
     id: "lead",
     title: "Stay in Touch",
     subtitle: "Leave your details for a stylist follow-up.",
-    referencePrefix: "DEMO-LEAD",
-    safeNote: "In production this would notify the boutique's CRM. Nothing is sent in this demo.",
+    referencePrefix: "REF",
+    safeNote: "",
   },
   handoff: {
     id: "handoff",
     title: "Human Concierge",
     subtitle: "We'll connect you with a person.",
-    referencePrefix: "DEMO-CONC",
-    safeNote: "This is a demo. In production a concierge would receive your request.",
+    referencePrefix: "CNC",
+    safeNote: "",
   },
 };
 
@@ -54,13 +54,14 @@ export const PAYMENT_METHODS = [
   { id: "invoice", label: "Request Invoice" },
 ] as const;
 
-/** Demo appointment slots. Not backed by any real calendar/availability. */
-export const DEMO_TIME_SLOTS = [
-  "Tomorrow · 11:00",
-  "Tomorrow · 15:30",
-  "Saturday · 10:00",
-  "Saturday · 14:00",
-  "Next week · By arrangement",
+/** Bookable times offered for any chosen calendar day. */
+export const APPOINTMENT_TIMES = [
+  "10:00",
+  "11:30",
+  "13:00",
+  "14:30",
+  "16:00",
+  "17:30",
 ];
 
 export const HANDOFF_CHANNELS = [

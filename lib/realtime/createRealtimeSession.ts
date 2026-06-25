@@ -39,7 +39,9 @@ export async function createRealtimeSession(): Promise<RealtimeSessionResponse> 
         session: {
           type: "realtime",
           model: REALTIME_MODEL,
-          instructions: AGENT_INSTRUCTIONS,
+          // Append the real current date so Aurelis can resolve "next Tuesday"
+          // etc. into concrete YYYY-MM-DD calendar dates for appointments.
+          instructions: `${AGENT_INSTRUCTIONS}\n\nToday's date is ${new Date().toISOString().slice(0, 10)}.`,
           output_modalities: ["audio"],
           audio: {
             input: {

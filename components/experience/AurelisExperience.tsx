@@ -13,7 +13,6 @@ import LuminousAtelierScene from "./LuminousAtelierScene";
 import SceneTransition from "./SceneTransition";
 import VoiceController from "@/components/voice/VoiceController";
 import MicButton from "@/components/voice/MicButton";
-import RealtimeStatus from "@/components/voice/RealtimeStatus";
 import TextFallback from "@/components/voice/TextFallback";
 import BrandOverlay from "@/components/overlays/BrandOverlay";
 import MinimalControls from "@/components/overlays/MinimalControls";
@@ -48,7 +47,6 @@ export default function AurelisExperience() {
 
       {/* Minimal luxury overlays */}
       <BrandOverlay />
-      <RealtimeStatus />
       <MicButton />
       <MinimalControls />
       <CartOverlay />

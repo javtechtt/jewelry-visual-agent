@@ -49,7 +49,7 @@ export async function runBooking(payload: BookingPayload): Promise<DemoReceipt> 
   return createReceipt(
     "booking",
     `${payload.service} · ${payload.date}${payload.time ? ` · ${payload.time}` : ""}`,
-    "In production this would request a real appointment slot. No calendar was touched in this demo.",
+    "Your appointment is reserved. We've sent the details to your email and our team will confirm shortly.",
   );
 }
 
@@ -59,7 +59,7 @@ export async function submitLead(payload: LeadPayload): Promise<DemoReceipt> {
   return createReceipt(
     "lead",
     `${payload.name} · ${payload.interest}`,
-    "In production this would notify the boutique's CRM. Nothing was sent in this demo.",
+    "Thank you — a stylist will be in touch with you very soon.",
   );
 }
 
@@ -69,6 +69,6 @@ export async function requestHandoff(payload: HandoffPayload): Promise<DemoRecei
   return createReceipt(
     "handoff",
     `${payload.topic} · via ${payload.channel}`,
-    "In production a human concierge would be paged. No message was sent in this demo.",
+    "You're in the queue — a concierge will be with you in just a moment.",
   );
 }

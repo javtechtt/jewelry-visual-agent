@@ -954,6 +954,87 @@ button {
   color: var(--ink-faint);
 }
 
+/* --- live appointment calendar --- */
+.calendar {
+  padding: 0.85rem 0.9rem;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid var(--hairline);
+}
+.calendar__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.6rem;
+}
+.calendar__title {
+  font-family: var(--font-serif);
+  font-size: 1.05rem;
+  letter-spacing: 0.04em;
+  color: var(--ink);
+}
+.calendar__nav {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid var(--hairline);
+  background: rgba(255, 255, 255, 0.7);
+  font-size: 1rem;
+  line-height: 1;
+  color: var(--ink-soft);
+  transition: all 0.2s ease;
+}
+.calendar__nav:hover:not(:disabled) {
+  border-color: var(--champagne);
+  color: var(--ink);
+}
+.calendar__nav:disabled { opacity: 0.3; cursor: default; }
+.calendar__weekdays,
+.calendar__grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 3px;
+}
+.calendar__weekday {
+  text-align: center;
+  font-size: 0.56rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  padding-bottom: 0.3rem;
+}
+.calendar__cell {
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  border-radius: 9px;
+  border: 1px solid transparent;
+  background: transparent;
+  font-size: 0.8rem;
+  color: var(--ink);
+  transition: all 0.18s ease;
+}
+.calendar__cell:hover:not(:disabled):not(.calendar__cell--empty) {
+  background: rgba(201, 169, 106, 0.14);
+}
+.calendar__cell--empty { pointer-events: none; }
+.calendar__cell:disabled { color: var(--ink-faint); opacity: 0.35; cursor: default; }
+.calendar__cell--today { border-color: rgba(201, 169, 106, 0.5); }
+.calendar__cell--on {
+  background: var(--champagne);
+  color: #3a2f1c;
+  border-color: var(--champagne);
+  box-shadow: 0 6px 16px -8px rgba(201, 169, 106, 0.8);
+}
+.calendar__cell--on:hover { background: var(--champagne); }
+
+.booking-times {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  justify-content: center;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

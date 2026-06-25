@@ -2,9 +2,10 @@
 
 // A three-screen checkout that feels like a real luxury purchase:
 //   details → payment → confirmation
-// The form lives in the store, so Aurelis can fill the contact fields in real
-// time (set_checkout_details) while the guest simply talks. The card fields on
-// the payment screen are LOCAL + ephemeral — never stored, never transmitted.
+// The whole form lives in the store, so Aurelis can fill the contact fields AND
+// the card fields in real time (set_checkout_details / set_payment_details)
+// while the guest simply talks. The card data is held only for the session and
+// is NEVER included in a receipt or sent anywhere — it is discarded on reset.
 
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
@@ -12,6 +13,7 @@ import { useExperienceStore } from "@/lib/stores/useExperienceStore";
 import { PAYMENT_METHODS } from "@/config/demo-flows";
 import { cartTotalLabel } from "@/lib/cart";
 import { isEmail } from "@/lib/demo/demoValidation";
+import { formatCardNumber, formatCvc, formatExpiry } from "@/lib/demo/cardFormat";
 import type { CartItem } from "@/types/demo";
 import { DemoConfirmation, DemoFlowShell, DemoProcessing } from "./DemoFlowShell";
 
@@ -40,20 +42,18 @@ export default function DemoCheckoutOverlay() {
   const step = useExperienceStore((s) => s.checkoutStep);
   const filled = useExperienceStore((s) => s.checkoutFilled);
   const updateCheckout = useExperienceStore((s) => s.updateCheckout);
+  const updateCard = useExperienceStore((s) => s.updateCard);
+  const card = useExperienceStore((s) => s.checkoutCard);
   const setStep = useExperienceStore((s) => s.setCheckoutStep);
   const placeOrder = useExperienceStore((s) => s.placeOrder);
   const receipt = useExperienceStore((s) => s.lastReceipt);
 
-  // Card entry is kept here, in local component state only — it never reaches the
-  // store, a receipt, or the network.
-  const [card, setCard] = useState({ number: "", exp: "", cvc: "" });
   const [touched, setTouched] = useState(false);
 
   useEffect(() => {
     if (!open) return;
     // Opened with an empty bag but a focused piece? Fold it in so there's an order.
     if (cart.length === 0 && selectedProduct) addToCart(selectedProduct);
-    setCard({ number: "", exp: "", cvc: "" });
     setTouched(false);
   }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -180,20 +180,23 @@ export default function DemoCheckoutOverlay() {
                     label="Card number"
                     placeholder="1234 5678 9012 3456"
                     value={card.number}
-                    onChange={(v) => setCard((c) => ({ ...c, number: formatCardNumber(v) }))}
+                    highlight={filled.includes("number")}
+                    onChange={(v) => updateCard({ number: formatCardNumber(v) })}
                   />
                   <div className="checkout-card__row">
                     <CardField
                       label="Expiry"
                       placeholder="MM / YY"
                       value={card.exp}
-                      onChange={(v) => setCard((c) => ({ ...c, exp: formatExpiry(v) }))}
+                      highlight={filled.includes("exp")}
+                      onChange={(v) => updateCard({ exp: formatExpiry(v) })}
                     />
                     <CardField
                       label="CVC"
                       placeholder="•••"
                       value={card.cvc}
-                      onChange={(v) => setCard((c) => ({ ...c, cvc: v.replace(/\D/g, "").slice(0, 4) }))}
+                      highlight={filled.includes("cvc")}
+                      onChange={(v) => updateCard({ cvc: formatCvc(v) })}
                     />
                   </div>
                   <p className="checkout-secure">
@@ -325,37 +328,37 @@ function CardField({
   label,
   value,
   placeholder,
+  highlight,
   onChange,
 }: {
   label: string;
   value: string;
   placeholder: string;
+  highlight?: boolean;
   onChange: (value: string) => void;
 }) {
   return (
     <label className="demo-field">
       <span className="demo-field__label">{label}</span>
-      <input
+      <motion.input
         className="demo-input checkout-input"
         value={value}
         placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}
         inputMode="numeric"
+        animate={
+          highlight
+            ? {
+                boxShadow: [
+                  "0 0 0 0 rgba(201,169,106,0)",
+                  "0 0 0 3px rgba(201,169,106,0.5)",
+                  "0 0 0 0 rgba(201,169,106,0)",
+                ],
+              }
+            : { boxShadow: "0 0 0 0 rgba(201,169,106,0)" }
+        }
+        transition={{ duration: 1.2, ease: "easeOut" }}
       />
     </label>
   );
-}
-
-function formatCardNumber(v: string): string {
-  return v
-    .replace(/\D/g, "")
-    .slice(0, 16)
-    .replace(/(.{4})/g, "$1 ")
-    .trim();
-}
-
-function formatExpiry(v: string): string {
-  const digits = v.replace(/\D/g, "").slice(0, 4);
-  if (digits.length <= 2) return digits;
-  return `${digits.slice(0, 2)} / ${digits.slice(2)}`;
 }

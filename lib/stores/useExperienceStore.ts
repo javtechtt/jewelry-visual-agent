@@ -14,12 +14,20 @@ import type {
 } from "@/types/experience";
 import type { CategoryId } from "@/types/category";
 import type { CommandId, MatchedIntent, RealtimeStatus } from "@/types/voice";
-import type { CartItem, CheckoutForm, CheckoutStep, DemoReceipt } from "@/types/demo";
+import type {
+  BookingForm,
+  BookingStep,
+  CardDetails,
+  CartItem,
+  CheckoutForm,
+  CheckoutStep,
+  DemoReceipt,
+} from "@/types/demo";
 import type { ViewMode } from "@/config/responsive";
 import { AGENT } from "@/config/agent";
 import { CATEGORY_MAP } from "@/config/categories";
 import { cartTotalLabel } from "@/lib/cart";
-import { runCheckout } from "@/lib/demo/demoActions";
+import { runBooking, runCheckout } from "@/lib/demo/demoActions";
 
 /** How long Aurelis stays in the "speaking" state after emitting a caption. */
 const SPEAK_MS = 2800;
@@ -28,6 +36,7 @@ let speakTimer: ReturnType<typeof setTimeout> | null = null;
 /** How long a field stays "just filled by Aurelis" highlighted. */
 const FILL_HIGHLIGHT_MS = 1400;
 let fillTimer: ReturnType<typeof setTimeout> | null = null;
+let bookingFillTimer: ReturnType<typeof setTimeout> | null = null;
 
 const EMPTY_CHECKOUT: CheckoutForm = {
   name: "",
@@ -36,6 +45,22 @@ const EMPTY_CHECKOUT: CheckoutForm = {
   paymentMethod: "card",
   consent: false,
 };
+
+const EMPTY_CARD: CardDetails = { number: "", exp: "", cvc: "" };
+
+const EMPTY_BOOKING: BookingForm = {
+  date: "",
+  time: "",
+  name: "",
+  email: "",
+  phone: "",
+  notes: "",
+};
+
+/** Human-readable service name for the active category (or a general visit). */
+function serviceLabel(categoryId: CategoryId | null): string {
+  return categoryId ? `${CATEGORY_MAP[categoryId].label} consultation` : "Private appointment";
+}
 
 export interface ExperienceState {
   // --- core scene state ---
@@ -65,6 +90,13 @@ export interface ExperienceState {
   checkoutStep: CheckoutStep;
   /** Field names just written by Aurelis — drives a brief on-screen highlight. */
   checkoutFilled: string[];
+  /** Card entry — held here so the agent can fill it; never transmitted. */
+  checkoutCard: CardDetails;
+
+  // --- live appointment booking (also agent-fillable) ---
+  booking: BookingForm;
+  bookingStep: BookingStep;
+  bookingFilled: string[];
 
   // --- primitive setters ---
   setScene: (scene: SceneId) => void;
@@ -88,9 +120,16 @@ export interface ExperienceState {
 
   // --- checkout (system-owned; agent + UI both write through these) ---
   updateCheckout: (patch: Partial<CheckoutForm>, fromAgent?: boolean) => void;
+  updateCard: (patch: Partial<CardDetails>, fromAgent?: boolean) => void;
   setCheckoutStep: (step: CheckoutStep) => void;
   resetCheckout: () => void;
   placeOrder: () => Promise<void>;
+
+  // --- booking (system-owned; agent + UI both write through these) ---
+  updateBooking: (patch: Partial<BookingForm>, fromAgent?: boolean) => void;
+  setBookingStep: (step: BookingStep) => void;
+  resetBooking: () => void;
+  confirmBooking: () => Promise<void>;
 
   // --- high-level experience actions ---
   enterCategory: (id: CategoryId) => void;
@@ -122,6 +161,10 @@ const INITIAL = {
   checkout: EMPTY_CHECKOUT,
   checkoutStep: "details" as CheckoutStep,
   checkoutFilled: [] as string[],
+  checkoutCard: EMPTY_CARD,
+  booking: EMPTY_BOOKING,
+  bookingStep: "schedule" as BookingStep,
+  bookingFilled: [] as string[],
 };
 
 export const useExperienceStore = create<ExperienceState>((set, get) => ({
@@ -191,10 +234,26 @@ export const useExperienceStore = create<ExperienceState>((set, get) => ({
     }
   },
 
+  updateCard: (patch, fromAgent = false) => {
+    set((s) => ({ checkoutCard: { ...s.checkoutCard, ...patch } }));
+    if (fromAgent) {
+      if (fillTimer) clearTimeout(fillTimer);
+      set({ checkoutFilled: Object.keys(patch) });
+      fillTimer = setTimeout(() => set({ checkoutFilled: [] }), FILL_HIGHLIGHT_MS);
+    } else {
+      set({ checkoutFilled: [] });
+    }
+  },
+
   setCheckoutStep: (checkoutStep) => set({ checkoutStep }),
 
   resetCheckout: () =>
-    set({ checkout: EMPTY_CHECKOUT, checkoutStep: "details", checkoutFilled: [] }),
+    set({
+      checkout: EMPTY_CHECKOUT,
+      checkoutStep: "details",
+      checkoutFilled: [],
+      checkoutCard: EMPTY_CARD,
+    }),
 
   placeOrder: async () => {
     const { cart, checkout } = get();
@@ -214,8 +273,41 @@ export const useExperienceStore = create<ExperienceState>((set, get) => ({
     set({ lastReceipt: receipt, cart: [], checkoutStep: "confirmation" });
   },
 
+  updateBooking: (patch, fromAgent = false) => {
+    set((s) => ({ booking: { ...s.booking, ...patch } }));
+    if (fromAgent) {
+      if (bookingFillTimer) clearTimeout(bookingFillTimer);
+      set({ bookingFilled: Object.keys(patch) });
+      bookingFillTimer = setTimeout(() => set({ bookingFilled: [] }), FILL_HIGHLIGHT_MS);
+    } else {
+      set({ bookingFilled: [] });
+    }
+  },
+
+  setBookingStep: (bookingStep) => set({ bookingStep }),
+
+  resetBooking: () => set({ booking: EMPTY_BOOKING, bookingStep: "schedule", bookingFilled: [] }),
+
+  confirmBooking: async () => {
+    const { booking, activeCategory } = get();
+    if (!booking.date || !booking.time) return;
+    set({ bookingStep: "processing" });
+    const receipt = await runBooking({
+      name: booking.name,
+      email: booking.email,
+      phone: booking.phone,
+      categoryId: activeCategory ?? "general",
+      service: serviceLabel(activeCategory),
+      date: booking.date,
+      time: booking.time,
+      notes: booking.notes,
+    });
+    set({ lastReceipt: receipt, bookingStep: "confirmation" });
+  },
+
   openDemoFlow: (flow) => {
     if (flow === "checkout") get().resetCheckout();
+    if (flow === "booking") get().resetBooking();
     set({ demoFlow: flow });
     const line =
       flow === "checkout"
@@ -232,6 +324,7 @@ export const useExperienceStore = create<ExperienceState>((set, get) => ({
     set({ demoFlow: null });
     // Drop any captured contact details once the panel is dismissed.
     get().resetCheckout();
+    get().resetBooking();
   },
 
   backToBoutique: () => {
