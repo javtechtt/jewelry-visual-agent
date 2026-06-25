@@ -60,6 +60,7 @@ function BoutiqueArc() {
 // --- Portrait: one large hero, swipe to browse ------------------------------
 const GAP = 3.2; // world-space spacing between cards (neighbours sit off-screen)
 const CARD_SCALE = 1.55;
+const AUTO_INTERVAL = 3.5; // seconds between automatic advances
 
 function BoutiqueCarousel() {
   const count = CATEGORIES.length;
@@ -68,6 +69,8 @@ function BoutiqueCarousel() {
   const posRef = useRef(0); // continuous carousel position (in card units)
   const targetRef = useRef(0); // snapped target index
   const drag = useRef({ startX: 0, base: 0, active: false, moved: 0 });
+  const autoRef = useRef(0); // seconds since the last automatic advance
+  const dirRef = useRef(1); // ping-pong direction for the auto-advance
   const [focus, setFocus] = useState(0);
 
   const release = () => {
@@ -100,7 +103,24 @@ function BoutiqueCarousel() {
   }, []);
 
   useFrame((_, delta) => {
-    if (!drag.current.active) {
+    if (drag.current.active) {
+      autoRef.current = 0; // never auto-advance while the guest is dragging
+    } else {
+      // Auto-advance through the categories, bouncing back at the ends.
+      autoRef.current += delta;
+      if (count > 1 && autoRef.current >= AUTO_INTERVAL) {
+        autoRef.current = 0;
+        let next = Math.round(targetRef.current) + dirRef.current;
+        if (next > count - 1) {
+          next = count - 2;
+          dirRef.current = -1;
+        } else if (next < 0) {
+          next = 1;
+          dirRef.current = 1;
+        }
+        targetRef.current = next;
+        setFocus(next);
+      }
       posRef.current = THREE.MathUtils.lerp(posRef.current, targetRef.current, 1 - Math.pow(0.0015, delta));
     }
     if (groupRef.current) groupRef.current.position.x = -posRef.current * GAP;
@@ -108,6 +128,7 @@ function BoutiqueCarousel() {
 
   const onDown = (e: ThreeEvent<PointerEvent>) => {
     e.stopPropagation();
+    autoRef.current = 0; // reset the auto-advance clock on any touch
     drag.current = { startX: e.point.x, base: posRef.current, active: true, moved: 0 };
   };
   const onMove = (e: ThreeEvent<PointerEvent>) => {
@@ -143,6 +164,8 @@ function BoutiqueCarousel() {
               aria-label={c.label}
               className={`boutique-dot${i === focus ? " boutique-dot--on" : ""}`}
               onClick={() => {
+                autoRef.current = 0;
+                dirRef.current = i >= focus ? 1 : -1;
                 targetRef.current = i;
                 setFocus(i);
               }}
