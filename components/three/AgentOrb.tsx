@@ -241,7 +241,7 @@ export default function AgentOrb() {
         <group ref={flareGroupRef}>
           {/* Pearlescent core. */}
           <mesh castShadow>
-            <icosahedronGeometry args={[0.6, 14]} />
+            <icosahedronGeometry args={[0.6, 10]} />
             <MeshDistortMaterial
               ref={matRef}
               color={AGENT.visual.coreColor}

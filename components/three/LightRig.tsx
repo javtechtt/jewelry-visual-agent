@@ -7,14 +7,14 @@
 export default function LightRig() {
   return (
     <>
-      <hemisphereLight args={["#fff6e8", "#e8dcc6", 0.85]} />
-      <ambientLight intensity={0.3} />
+      <hemisphereLight args={["#fff6e8", "#e8dcc6", 0.6]} />
+      <ambientLight intensity={0.18} />
       <directionalLight
         position={[4.5, 6.5, 4]}
         intensity={1.7}
         color="#fff3df"
         castShadow
-        shadow-mapSize={[1024, 1024]}
+        shadow-mapSize={[512, 512]}
         shadow-bias={-0.0002}
         shadow-camera-near={1}
         shadow-camera-far={24}

@@ -29,12 +29,15 @@ export interface QualityPreset {
   contactShadowResolution: number;
 }
 
-// Desktop values mirror the original canvas/effects EXACTLY. Non-desktop trims
-// only the GPU-heavy render targets (floor reflection + contact shadows) and the
-// DPR ceiling for smoother handheld framerates — it never touches the look of
-// the desktop scene or its post-processing.
+// Render-quality trims (the camera + composition are untouched):
+// - Reflection + contact-shadow render targets are 512 across all views. Both
+//   are heavily blurred (reflection blur [420,110]/mixBlur 8; contact shadow
+//   blur 2.8), so 512 is visually identical to 1024 while halving those passes.
+// - DPR ceiling capped at 1.5. Pixel fill is the dominant cost on hi-DPI
+//   displays; measured ~137fps @ 5.4MP vs ~74fps @ 12MP. 1.5 trims ~30% of
+//   pixels vs 1.8 for a large framerate gain at a slight sharpness cost.
 export const QUALITY: Record<ViewMode, QualityPreset> = {
-  desktop: { dpr: [1, 1.8], reflectorResolution: 1024, contactShadowResolution: 1024 },
-  landscape: { dpr: [1, 1.6], reflectorResolution: 512, contactShadowResolution: 512 },
+  desktop: { dpr: [1, 1.5], reflectorResolution: 512, contactShadowResolution: 512 },
+  landscape: { dpr: [1, 1.5], reflectorResolution: 512, contactShadowResolution: 512 },
   portrait: { dpr: [1, 1.5], reflectorResolution: 512, contactShadowResolution: 512 },
 };
