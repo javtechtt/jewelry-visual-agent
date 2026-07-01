@@ -221,6 +221,7 @@ export default function DemoCheckoutOverlay() {
                 type="button"
                 className="action-btn action-btn--accent"
                 onClick={() => void placeOrder()}
+                disabled={cart.length === 0}
               >
                 Pay {total}
               </button>

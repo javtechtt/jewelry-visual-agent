@@ -198,21 +198,6 @@ button {
   color: var(--ink-soft);
   min-height: 0.7rem;
 }
-.scene-label--active .scene-label__name {
-  color: var(--champagne);
-}
-
-.atelier-title {
-  font-family: var(--font-serif);
-  font-size: 2.1rem;
-  letter-spacing: 0.3em;
-  text-transform: uppercase;
-  color: var(--ink);
-  text-shadow: 0 2px 24px rgba(255, 250, 238, 0.9);
-  white-space: nowrap;
-  padding-left: 0.3em;
-}
-
 /* Portrait boutique carousel dots (only rendered in the portrait scene). */
 .boutique-dots {
   display: flex;
@@ -243,22 +228,6 @@ button {
   background: var(--champagne);
   border-color: var(--champagne);
   box-shadow: 0 0 0 4px rgba(201, 169, 106, 0.16);
-}
-
-/* --- scene transition flash ---------------------------------------------- */
-
-.scene-flash {
-  position: fixed;
-  inset: 0;
-  z-index: 20;
-  pointer-events: none;
-  mix-blend-mode: screen;
-  background: radial-gradient(
-    circle at 50% 45%,
-    rgba(255, 251, 240, 0.95),
-    rgba(255, 244, 220, 0.45) 38%,
-    transparent 70%
-  );
 }
 
 /* --- brand --------------------------------------------------------------- */
@@ -319,44 +288,6 @@ button {
 .status-pill--error .status-pill__dot { background: #c97a6a; }
 .status-pill--mock .status-pill__dot { background: var(--champagne); }
 
-/* --- top-center category rail -------------------------------------------- */
-
-.category-rail {
-  position: fixed;
-  top: 1.9rem;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 28;
-  display: flex;
-  gap: 0.4rem;
-  flex-wrap: wrap;
-  justify-content: center;
-  max-width: min(64vw, 760px);
-}
-.chip {
-  --chip-glow: var(--champagne-soft);
-  padding: 0.36rem 0.85rem;
-  border-radius: 999px;
-  border: 1px solid var(--hairline);
-  background: var(--glass);
-  backdrop-filter: blur(12px);
-  font-size: 0.66rem;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--ink-soft);
-  transition: color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
-}
-.chip:hover {
-  color: var(--ink);
-  transform: translateY(-1px);
-  box-shadow: 0 6px 18px -10px var(--chip-glow);
-}
-.chip--active {
-  color: var(--ink);
-  border-color: var(--champagne);
-  box-shadow: 0 0 0 1px var(--champagne-soft), 0 8px 22px -12px var(--chip-glow);
-}
-
 /* --- bottom control clusters --------------------------------------------- */
 
 .controls {
@@ -369,6 +300,34 @@ button {
 }
 .controls--left { left: 2rem; }
 .controls--right { right: 2rem; }
+
+/* The piece in focus + its add-to-bag action (bottom-left). */
+.focus-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.4rem 0.4rem 0.4rem 0.95rem;
+  border-radius: 999px;
+  border: 1px solid var(--hairline);
+  background: var(--glass);
+  backdrop-filter: blur(14px);
+  box-shadow: 0 10px 34px rgba(60, 45, 20, 0.14);
+}
+.focus-chip__meta {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.18;
+}
+.focus-chip__name {
+  font-size: 0.82rem;
+  letter-spacing: 0.01em;
+  color: var(--ink);
+}
+.focus-chip__price {
+  font-size: 0.68rem;
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+}
 
 .ghost-btn {
   padding: 0.45rem 0.95rem;
@@ -1039,87 +998,6 @@ button {
   color: var(--ink-faint);
 }
 
-/* --- live appointment calendar --- */
-.calendar {
-  padding: 0.85rem 0.9rem;
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.6);
-  border: 1px solid var(--hairline);
-}
-.calendar__head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 0.6rem;
-}
-.calendar__title {
-  font-family: var(--font-serif);
-  font-size: 1.05rem;
-  letter-spacing: 0.04em;
-  color: var(--ink);
-}
-.calendar__nav {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  border: 1px solid var(--hairline);
-  background: rgba(255, 255, 255, 0.7);
-  font-size: 1rem;
-  line-height: 1;
-  color: var(--ink-soft);
-  transition: all 0.2s ease;
-}
-.calendar__nav:hover:not(:disabled) {
-  border-color: var(--champagne);
-  color: var(--ink);
-}
-.calendar__nav:disabled { opacity: 0.3; cursor: default; }
-.calendar__weekdays,
-.calendar__grid {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 3px;
-}
-.calendar__weekday {
-  text-align: center;
-  font-size: 0.56rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--ink-faint);
-  padding-bottom: 0.3rem;
-}
-.calendar__cell {
-  aspect-ratio: 1;
-  display: grid;
-  place-items: center;
-  border-radius: 9px;
-  border: 1px solid transparent;
-  background: transparent;
-  font-size: 0.8rem;
-  color: var(--ink);
-  transition: all 0.18s ease;
-}
-.calendar__cell:hover:not(:disabled):not(.calendar__cell--empty) {
-  background: rgba(201, 169, 106, 0.14);
-}
-.calendar__cell--empty { pointer-events: none; }
-.calendar__cell:disabled { color: var(--ink-faint); opacity: 0.35; cursor: default; }
-.calendar__cell--today { border-color: rgba(201, 169, 106, 0.5); }
-.calendar__cell--on {
-  background: var(--champagne);
-  color: #3a2f1c;
-  border-color: var(--champagne);
-  box-shadow: 0 6px 16px -8px rgba(201, 169, 106, 0.8);
-}
-.calendar__cell--on:hover { background: var(--champagne); }
-
-.booking-times {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
-  justify-content: center;
-}
-
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -1153,7 +1031,6 @@ button {
     right: max(1.5rem, env(safe-area-inset-right));
   }
   .text-panel { right: max(1.5rem, env(safe-area-inset-right)); }
-  .category-rail { max-width: 90vw; }
   .controls--left { left: max(1.5rem, env(safe-area-inset-left)); }
   .controls--right { right: max(1.5rem, env(safe-area-inset-right)); }
   .mic-dock { bottom: max(2rem, calc(env(safe-area-inset-bottom) + 1.25rem)); }
@@ -1181,34 +1058,6 @@ button {
     height: 42px;
   }
 
-  /* Category rail: its own full-width, single-line scroll row beneath the brand
-     so all categories stay reachable without wrapping or cramping. */
-  .category-rail {
-    top: calc(max(0.9rem, env(safe-area-inset-top)) + 3.2rem);
-    left: 0;
-    right: 0;
-    transform: none;
-    max-width: none;
-    flex-wrap: nowrap;
-    justify-content: flex-start;
-    gap: 0.45rem;
-    overflow-x: auto;
-    scrollbar-width: none;
-    -webkit-overflow-scrolling: touch;
-    scroll-snap-type: x proximity;
-    padding: 0.1rem max(1rem, env(safe-area-inset-right)) 0.1rem max(1rem, env(safe-area-inset-left));
-  }
-  .category-rail::-webkit-scrollbar { display: none; }
-  .chip {
-    flex: 0 0 auto;
-    scroll-snap-align: center;
-    display: inline-flex;
-    align-items: center;
-    min-height: 40px;
-    padding: 0.5rem 1.05rem;
-    font-size: 0.7rem;
-  }
-
   /* Cart → a thumb-reachable floating bar, never the top-right corner (which on a
      narrow screen would collide with the category rail + text toggle). */
   .cart-panel {
@@ -1223,9 +1072,6 @@ button {
   /* Voice hint clears the bottom action row on phones. */
   .voice-hint { bottom: calc(11.2rem + env(safe-area-inset-bottom)); }
 
-  /* Atelier category title — smaller + tighter so it doesn't span the screen. */
-  .atelier-title { font-size: 1.4rem; letter-spacing: 0.2em; }
-
   /* Caption sits clear above the action row. */
   .caption-dock {
     bottom: calc(8.6rem + env(safe-area-inset-bottom));
@@ -1233,40 +1079,39 @@ button {
   }
   .caption { font-size: 1rem; }
 
-  /* Demo-action CTAs: one thumb-height row that scrolls if it overflows, sitting
-     clear above the mic instead of wrapping down into it. */
+  /* Checkout — a single CTA anchored bottom-right, flanking the centred mic. */
   .controls--right {
-    left: 0;
-    right: 0;
-    justify-content: flex-start;
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    scrollbar-width: none;
-    -webkit-overflow-scrolling: touch;
-    scroll-snap-type: x proximity;
-    gap: 0.5rem;
-    bottom: calc(6.6rem + env(safe-area-inset-bottom));
-    padding: 0.2rem max(1rem, env(safe-area-inset-right)) 0.2rem max(1rem, env(safe-area-inset-left));
+    left: auto;
+    right: max(1rem, env(safe-area-inset-right));
+    bottom: calc(5.4rem + env(safe-area-inset-bottom));
+    justify-content: flex-end;
   }
-  .controls--right::-webkit-scrollbar { display: none; }
   .action-btn {
-    flex: 0 0 auto;
-    scroll-snap-align: start;
+    display: inline-flex;
+    align-items: center;
     min-height: 42px;
     padding: 0.62rem 1rem;
     font-size: 0.66rem;
   }
 
-  /* Context cluster (Boutique / Start over): stacked in the bottom-left corner,
-     clear of the centred mic orb. */
+  /* Add-to-bag — a single pill anchored bottom-left, flanking the centred mic.
+     The focused piece's name + price already show under the carousel hero, so on
+     phones the chip is trimmed to just the action. */
   .controls--left {
     left: max(1rem, env(safe-area-inset-left));
     right: auto;
-    bottom: calc(1rem + env(safe-area-inset-bottom));
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.4rem;
+    bottom: calc(5.4rem + env(safe-area-inset-bottom));
+    flex-direction: row;
+    align-items: center;
   }
+  .focus-chip {
+    padding: 0;
+    border: none;
+    background: none;
+    box-shadow: none;
+    backdrop-filter: none;
+  }
+  .focus-chip__meta { display: none; }
   .ghost-btn {
     display: inline-flex;
     align-items: center;
@@ -1310,7 +1155,6 @@ button {
 @media (max-width: 430px) {
   .brand__mark { font-size: 1.05rem; }
   .action-btn { padding: 0.44rem 0.72rem; font-size: 0.62rem; }
-  .chip { padding: 0.46rem 0.85rem; font-size: 0.66rem; }
   .caption { font-size: 0.94rem; }
   .demo-panel__title { font-size: 1.4rem; }
 }
@@ -1322,6 +1166,7 @@ button {
   .mic-dock__hint { display: none; }
   .mic-dock { bottom: calc(0.6rem + env(safe-area-inset-bottom)); }
   .caption-dock { bottom: calc(5rem + env(safe-area-inset-bottom)); }
-  .controls--right { bottom: calc(3.4rem + env(safe-area-inset-bottom)); }
+  /* Add (left) + Checkout (right) flank the mic on one low band. */
+  .controls--right { bottom: calc(0.6rem + env(safe-area-inset-bottom)); }
   .controls--left { bottom: calc(0.6rem + env(safe-area-inset-bottom)); }
 }

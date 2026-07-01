@@ -1,5 +1,5 @@
 // Generates demo-safe reference numbers + receipts. These are entirely local —
-// no number here corresponds to a real order, booking, lead, or session.
+// no number here corresponds to a real order or session.
 
 import type { DemoFlowId } from "@/types/experience";
 import type { DemoReceipt } from "@/types/demo";

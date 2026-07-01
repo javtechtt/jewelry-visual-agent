@@ -1,9 +1,10 @@
 "use client";
 
-// Single source of truth for the experience: which scene is active, the focused
-// category/product, Aurelis' agent state, the open demo flow, and voice status.
-// Both the 3D scene and the DOM overlays subscribe to this store, and all voice
-// + click + text commands funnel through runCommand().
+// Single source of truth for the experience: the focused piece, the bag,
+// Aurelis' agent state, the checkout flow, and voice status. Both the 3D scene
+// and the DOM overlays subscribe to this store, and all voice + click + text
+// commands funnel through runCommand(). The boutique is a single home page — the
+// guest selects a piece and the agent guides them to checkout (no categories).
 
 import { create } from "zustand";
 import type {
@@ -12,11 +13,8 @@ import type {
   SceneId,
   SelectedProduct,
 } from "@/types/experience";
-import type { CategoryId } from "@/types/category";
 import type { CommandId, MatchedIntent, RealtimeStatus } from "@/types/voice";
 import type {
-  BookingForm,
-  BookingStep,
   CardDetails,
   CartItem,
   CheckoutForm,
@@ -25,9 +23,10 @@ import type {
 } from "@/types/demo";
 import type { ViewMode } from "@/config/responsive";
 import { AGENT } from "@/config/agent";
-import { CATEGORY_MAP } from "@/config/categories";
+import { PRODUCT_MAP } from "@/config/products";
 import { cartTotalLabel } from "@/lib/cart";
-import { runBooking, runCheckout } from "@/lib/demo/demoActions";
+import { runCheckout } from "@/lib/demo/demoActions";
+import { isEmail } from "@/lib/demo/demoValidation";
 
 /** How long Aurelis stays in the "speaking" state after emitting a caption. */
 const SPEAK_MS = 2800;
@@ -36,7 +35,6 @@ let speakTimer: ReturnType<typeof setTimeout> | null = null;
 /** How long a field stays "just filled by Aurelis" highlighted. */
 const FILL_HIGHLIGHT_MS = 1400;
 let fillTimer: ReturnType<typeof setTimeout> | null = null;
-let bookingFillTimer: ReturnType<typeof setTimeout> | null = null;
 
 const EMPTY_CHECKOUT: CheckoutForm = {
   name: "",
@@ -48,25 +46,9 @@ const EMPTY_CHECKOUT: CheckoutForm = {
 
 const EMPTY_CARD: CardDetails = { number: "", exp: "", cvc: "" };
 
-const EMPTY_BOOKING: BookingForm = {
-  service: "",
-  date: "",
-  time: "",
-  name: "",
-  email: "",
-  phone: "",
-  notes: "",
-};
-
-/** Human-readable service name for the active category (or a general visit). */
-function serviceLabel(categoryId: CategoryId | null): string {
-  return categoryId ? `${CATEGORY_MAP[categoryId].label} consultation` : "Private appointment";
-}
-
 export interface ExperienceState {
-  // --- core scene state ---
+  // --- core scene state (single home scene) ---
   scene: SceneId;
-  activeCategory: CategoryId | null;
 
   // --- responsive view mode (drives the 3D scene presets only) ---
   view: ViewMode;
@@ -92,13 +74,7 @@ export interface ExperienceState {
   /** Card entry — held here so the agent can fill it; never transmitted. */
   checkoutCard: CardDetails;
 
-  // --- live appointment booking (also agent-fillable) ---
-  booking: BookingForm;
-  bookingStep: BookingStep;
-  bookingFilled: string[];
-
   // --- primitive setters ---
-  setScene: (scene: SceneId) => void;
   setView: (view: ViewMode) => void;
   setAgentState: (state: AgentState) => void;
   setRealtimeStatus: (status: RealtimeStatus) => void;
@@ -122,28 +98,17 @@ export interface ExperienceState {
   resetCheckout: () => void;
   placeOrder: () => Promise<void>;
 
-  // --- booking (system-owned; agent + UI both write through these) ---
-  updateBooking: (patch: Partial<BookingForm>, fromAgent?: boolean) => void;
-  setBookingStep: (step: BookingStep) => void;
-  resetBooking: () => void;
-  confirmBooking: () => Promise<void>;
-
   // --- high-level experience actions ---
-  enterCategory: (id: CategoryId) => void;
   selectProduct: (product: SelectedProduct) => void;
   openDemoFlow: (flow: DemoFlowId) => void;
   closeDemoFlow: () => void;
-  backToBoutique: () => void;
   startOver: () => void;
-  runCommand: (
-    intent: MatchedIntent | { command: CommandId; category?: CategoryId; demoFlow?: DemoFlowId },
-  ) => void;
+  runCommand: (intent: MatchedIntent | { command: CommandId; productId?: string }) => void;
 }
 
 const INITIAL = {
   scene: "boutique-window" as SceneId,
   view: "desktop" as ViewMode,
-  activeCategory: null as CategoryId | null,
   agentState: "idle" as AgentState,
   realtimeStatus: "idle" as RealtimeStatus,
   micActive: false,
@@ -157,15 +122,11 @@ const INITIAL = {
   checkoutStep: "details" as CheckoutStep,
   checkoutFilled: [] as string[],
   checkoutCard: EMPTY_CARD,
-  booking: EMPTY_BOOKING,
-  bookingStep: "schedule" as BookingStep,
-  bookingFilled: [] as string[],
 };
 
 export const useExperienceStore = create<ExperienceState>((set, get) => ({
   ...INITIAL,
 
-  setScene: (scene) => set({ scene }),
   setView: (view) => set({ view }),
   setAgentState: (agentState) => set({ agentState }),
   setRealtimeStatus: (realtimeStatus) => set({ realtimeStatus }),
@@ -187,17 +148,6 @@ export const useExperienceStore = create<ExperienceState>((set, get) => ({
   toggleTextFallback: () => set({ textFallbackOpen: !get().textFallbackOpen }),
   setReceipt: (lastReceipt) => set({ lastReceipt }),
 
-  enterCategory: (id) => {
-    const category = CATEGORY_MAP[id];
-    if (!category) return;
-    set({
-      scene: "luminous-atelier",
-      activeCategory: id,
-      agentState: "thinking",
-    });
-    get().speak(AGENT.lines.enterCategory(category.label));
-  },
-
   selectProduct: (product) => {
     set({ selectedProduct: product });
     get().speak(AGENT.lines.selectProduct(product.name));
@@ -211,7 +161,13 @@ export const useExperienceStore = create<ExperienceState>((set, get) => ({
         : [...s.cart, { ...item, qty: 1 }];
       return { cart };
     }),
-  removeFromCart: (id) => set((s) => ({ cart: s.cart.filter((c) => c.id !== id) })),
+  removeFromCart: (id) => {
+    set((s) => ({ cart: s.cart.filter((c) => c.id !== id) }));
+    // If the guest empties the bag mid-checkout, there's nothing to buy — gently
+    // leave checkout rather than strand them on a dead Pay button + empty summary.
+    const s = get();
+    if (s.cart.length === 0 && s.demoFlow === "checkout") s.closeDemoFlow();
+  },
   clearCart: () => set({ cart: [] }),
 
   updateCheckout: (patch, fromAgent = false) => {
@@ -250,6 +206,9 @@ export const useExperienceStore = create<ExperienceState>((set, get) => ({
   placeOrder: async () => {
     const { cart, checkout } = get();
     if (cart.length === 0) return;
+    // Defense-in-depth: never finalize an order without complete contact details,
+    // whatever route reached this point (voice tool, Pay button, off-script turn).
+    if (!checkout.name.trim() || !isEmail(checkout.email) || !checkout.phone.trim()) return;
     // Placing the order implies acceptance of the on-screen Terms of Sale.
     set({ checkoutStep: "processing", checkout: { ...checkout, consent: true } });
     const total = cartTotalLabel(cart);
@@ -265,70 +224,16 @@ export const useExperienceStore = create<ExperienceState>((set, get) => ({
     set({ lastReceipt: receipt, cart: [], checkoutStep: "confirmation" });
   },
 
-  updateBooking: (patch, fromAgent = false) => {
-    set((s) => ({ booking: { ...s.booking, ...patch } }));
-    if (fromAgent) {
-      if (bookingFillTimer) clearTimeout(bookingFillTimer);
-      set({ bookingFilled: Object.keys(patch) });
-      bookingFillTimer = setTimeout(() => set({ bookingFilled: [] }), FILL_HIGHLIGHT_MS);
-    } else {
-      set({ bookingFilled: [] });
-    }
-  },
-
-  setBookingStep: (bookingStep) => set({ bookingStep }),
-
-  resetBooking: () => set({ booking: EMPTY_BOOKING, bookingStep: "schedule", bookingFilled: [] }),
-
-  confirmBooking: async () => {
-    const { booking, activeCategory } = get();
-    if (!booking.date || !booking.time) return;
-    set({ bookingStep: "processing" });
-    const receipt = await runBooking({
-      name: booking.name,
-      email: booking.email,
-      phone: booking.phone,
-      categoryId: activeCategory ?? "general",
-      // The guest's stated reason wins; otherwise fall back to the category.
-      service: booking.service.trim() || serviceLabel(activeCategory),
-      date: booking.date,
-      time: booking.time,
-      notes: booking.notes,
-    });
-    set({ lastReceipt: receipt, bookingStep: "confirmation" });
-  },
-
   openDemoFlow: (flow) => {
-    if (flow === "checkout") get().resetCheckout();
-    if (flow === "booking") get().resetBooking();
+    get().resetCheckout();
     set({ demoFlow: flow });
-    const line =
-      flow === "checkout"
-        ? AGENT.lines.checkout
-        : flow === "booking"
-          ? AGENT.lines.booking
-          : flow === "lead"
-            ? AGENT.lines.lead
-            : AGENT.lines.handoff;
-    get().speak(line);
+    get().speak(AGENT.lines.checkout);
   },
 
   closeDemoFlow: () => {
     set({ demoFlow: null });
     // Drop any captured contact details once the panel is dismissed.
     get().resetCheckout();
-    get().resetBooking();
-  },
-
-  backToBoutique: () => {
-    set({
-      scene: "boutique-window",
-      activeCategory: null,
-      selectedProduct: null,
-      demoFlow: null,
-      agentState: "speaking",
-    });
-    get().speak(AGENT.lines.back);
   },
 
   startOver: () => {
@@ -341,23 +246,15 @@ export const useExperienceStore = create<ExperienceState>((set, get) => ({
 
   runCommand: (intent) => {
     switch (intent.command) {
-      case "show-category":
-        if (intent.category) get().enterCategory(intent.category);
+      case "select-product": {
+        const product = intent.productId ? PRODUCT_MAP[intent.productId] : undefined;
+        if (product) {
+          get().selectProduct({ id: product.id, name: product.name, priceLabel: product.priceLabel });
+        }
         break;
-      case "book-appointment":
-        get().openDemoFlow("booking");
-        break;
+      }
       case "start-checkout":
         get().openDemoFlow("checkout");
-        break;
-      case "connect-human":
-        get().openDemoFlow("handoff");
-        break;
-      case "request-info":
-        get().openDemoFlow("lead");
-        break;
-      case "back-to-boutique":
-        get().backToBoutique();
         break;
       case "start-over":
         get().startOver();

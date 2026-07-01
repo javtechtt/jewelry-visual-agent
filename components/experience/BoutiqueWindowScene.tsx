@@ -1,23 +1,22 @@
 "use client";
 
-// Screen 1 — the Boutique Window.
-// - Desktop / landscape: the categories float in a gentle horizontal arc.
-// - Portrait (phones): a single large category hero, centred, that the guest
-//   swipes through one at a time (tap to enter), with a dot indicator. A
-//   vertical column never fit five 3D pieces on a narrow screen, so portrait
-//   shows one at a time instead.
+// The boutique home page — the single showcase.
+// - Desktop / landscape: the collection floats in a gentle horizontal arc.
+// - Portrait (phones): a single large hero the guest swipes through one at a
+//   time (tap to focus), with a dot indicator. A vertical column never fit the
+//   pieces on a narrow screen, so portrait shows one at a time instead.
 
 import { useEffect, useRef, useState } from "react";
 import { useFrame, type ThreeEvent } from "@react-three/fiber";
 import { useReducedMotion } from "framer-motion";
 import { Float, Html } from "@react-three/drei";
 import * as THREE from "three";
-import { CATEGORIES } from "@/config/categories";
+import { PRODUCTS } from "@/config/products";
 import { useExperienceStore } from "@/lib/stores/useExperienceStore";
 import { BOUTIQUE_LAYOUT } from "@/config/scenes";
-import type { Category } from "@/types/category";
+import type { Product } from "@/types/product";
 import type { Vec3 } from "@/types/experience";
-import FloatingCategoryObject from "@/components/three/FloatingCategoryObject";
+import FloatingProductObject from "@/components/three/FloatingProductObject";
 import ProductObject from "@/components/three/ProductObject";
 
 export default function BoutiqueWindowScene() {
@@ -25,29 +24,32 @@ export default function BoutiqueWindowScene() {
   return view === "portrait" ? <BoutiqueCarousel /> : <BoutiqueArc />;
 }
 
-// --- Desktop / landscape: the original horizontal arc (unchanged) -----------
+// --- Desktop / landscape: the horizontal arc ---------------------------------
 function BoutiqueArc() {
-  const count = CATEGORIES.length;
+  const count = PRODUCTS.length;
   const view = useExperienceStore((s) => s.view);
   const layout = BOUTIQUE_LAYOUT[view];
 
   return (
     <group>
-      {CATEGORIES.map((category, index) => {
+      {PRODUCTS.map((product, index) => {
         const t = count > 1 ? index / (count - 1) : 0.5;
         const x = (t - 0.5) * layout.spread;
         const z = -Math.abs(x) * 0.18; // curve the ends gently away
         const position: Vec3 = [x, 0.3, z];
-        const rotationY = -x * 0.05; // turn panels toward the camera
+        const rotationY = -x * 0.05; // turn pieces toward the camera
+        // Product names are long (2–3 words); on the arc, drop every other
+        // label a row lower so adjacent names never collide horizontally.
+        const labelY = layout.labelY - (index % 2 === 1 ? layout.labelStagger : 0);
         return (
-          <FloatingCategoryObject
-            key={category.id}
-            category={category}
+          <FloatingProductObject
+            key={product.id}
+            product={product}
             position={position}
             rotationY={rotationY}
             objectScale={layout.objectScale}
             hitScale={layout.hitScale}
-            labelY={layout.labelY}
+            labelY={labelY}
             labelDistance={layout.labelDistance}
           />
         );
@@ -62,8 +64,8 @@ const CARD_SCALE = 1.55;
 const AUTO_INTERVAL = 3.5; // seconds between automatic advances
 
 function BoutiqueCarousel() {
-  const count = CATEGORIES.length;
-  const enterCategory = useExperienceStore((s) => s.enterCategory);
+  const count = PRODUCTS.length;
+  const selectProduct = useExperienceStore((s) => s.selectProduct);
   const groupRef = useRef<THREE.Group>(null);
   const posRef = useRef(0); // continuous carousel position (in card units)
   const targetRef = useRef(0); // snapped target index
@@ -77,9 +79,10 @@ function BoutiqueCarousel() {
     if (!drag.current.active) return;
     drag.current.active = false;
     if (drag.current.moved < 0.4) {
-      // A tap (not a swipe) → enter the centred category.
+      // A tap (not a swipe) → focus the centred piece.
       const i = THREE.MathUtils.clamp(Math.round(posRef.current), 0, count - 1);
-      enterCategory(CATEGORIES[i].id);
+      const p = PRODUCTS[i];
+      selectProduct({ id: p.id, name: p.name, priceLabel: p.priceLabel });
       return;
     }
     // A moderate flick advances one card in the drag direction; otherwise snap
@@ -106,7 +109,7 @@ function BoutiqueCarousel() {
     if (drag.current.active) {
       autoRef.current = 0; // never auto-advance while the guest is dragging
     } else {
-      // Auto-advance through the categories, bouncing back at the ends.
+      // Auto-advance through the pieces, bouncing back at the ends.
       // Suppressed entirely when the guest prefers reduced motion.
       autoRef.current += delta;
       if (!reduced && count > 1 && autoRef.current >= AUTO_INTERVAL) {
@@ -148,19 +151,19 @@ function BoutiqueCarousel() {
       </mesh>
 
       <group ref={groupRef}>
-        {CATEGORIES.map((category, index) => (
-          <CarouselCard key={category.id} category={category} x={index * GAP} />
+        {PRODUCTS.map((product, index) => (
+          <CarouselCard key={product.id} product={product} x={index * GAP} />
         ))}
       </group>
 
-      {/* Dot indicator — also tappable to jump to a category. */}
+      {/* Dot indicator — also tappable to jump to a piece. */}
       <Html center position={[0, -1.55, 0]} distanceFactor={6} zIndexRange={[30, 0]}>
         <div className="boutique-dots">
-          {CATEGORIES.map((c, i) => (
+          {PRODUCTS.map((p, i) => (
             <button
-              key={c.id}
+              key={p.id}
               type="button"
-              aria-label={c.label}
+              aria-label={p.name}
               className={`boutique-dot${i === focus ? " boutique-dot--on" : ""}`}
               onClick={() => {
                 autoRef.current = 0;
@@ -176,22 +179,23 @@ function BoutiqueCarousel() {
   );
 }
 
-function CarouselCard({ category, x }: { category: Category; x: number }) {
+function CarouselCard({ product, x }: { product: Product; x: number }) {
   return (
     <group position={[x, 0.55, 0]}>
       <Float speed={1.1} rotationIntensity={0.18} floatIntensity={0.5}>
         <group scale={CARD_SCALE}>
           <ProductObject
-            shape={category.shape}
-            accent={category.accent}
-            cutout={category.cutout}
-            model={category.model}
+            shape={product.shape}
+            accent={product.accent}
+            cutout={product.cutout}
+            model={product.model}
           />
         </group>
       </Float>
       <Html center position={[0, -1.35, 0]} distanceFactor={4.4} zIndexRange={[8, 0]} style={{ pointerEvents: "none" }}>
         <div className="scene-label">
-          <span className="scene-label__name">{category.label}</span>
+          <span className="scene-label__name">{product.name}</span>
+          <span className="scene-label__hint">{product.priceLabel}</span>
         </div>
       </Html>
     </group>

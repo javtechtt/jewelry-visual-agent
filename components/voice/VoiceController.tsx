@@ -9,14 +9,13 @@
 import { useEffect, useRef } from "react";
 import { RealtimeClient } from "@/lib/realtime/realtimeClient";
 import { useExperienceStore } from "@/lib/stores/useExperienceStore";
-import { getCategoryOptions } from "@/config/category-options";
-import { CATEGORIES } from "@/config/categories";
+import { PRODUCTS } from "@/config/products";
 import { PAYMENT_METHODS } from "@/config/demo-flows";
 import { isEmail } from "@/lib/demo/demoValidation";
 import { formatCardNumber, formatCvc, formatExpiry } from "@/lib/demo/cardFormat";
-import type { CategoryId, CategoryOption } from "@/types/category";
+import type { Product } from "@/types/product";
 import type { SelectedProduct } from "@/types/experience";
-import type { BookingForm, CardDetails, CheckoutForm, PaymentMethodId } from "@/types/demo";
+import type { CardDetails, CheckoutForm, PaymentMethodId } from "@/types/demo";
 
 export default function VoiceController() {
   const micActive = useExperienceStore((s) => s.micActive);
@@ -53,88 +52,49 @@ export default function VoiceController() {
   return null;
 }
 
-/**
- * Execute a Realtime tool call against the store and return a short, natural
- * result string the model can read back to the guest. Uses store.getState() so
- * it never needs to be a hook.
- */
-/** Match a spoken name to an option: substring first, then best word overlap. */
-function matchOption(options: CategoryOption[], wanted: string): CategoryOption | undefined {
-  const direct = options.find(
-    (o) => o.name.toLowerCase().includes(wanted) || wanted.includes(o.name.toLowerCase()),
+/** Match a spoken name to a piece: substring first, then best word overlap. */
+function matchProduct(wanted: string): Product | undefined {
+  const direct = PRODUCTS.find(
+    (p) => p.name.toLowerCase().includes(wanted) || wanted.includes(p.name.toLowerCase()),
   );
   if (direct) return direct;
   const words = wanted.split(/\s+/).filter((w) => w.length > 2);
-  let best: CategoryOption | undefined;
+  let best: Product | undefined;
   let bestScore = 0;
-  for (const o of options) {
-    const name = o.name.toLowerCase();
+  for (const p of PRODUCTS) {
+    const name = p.name.toLowerCase();
     const score = words.filter((w) => name.includes(w)).length;
     if (score > bestScore) {
       bestScore = score;
-      best = o;
+      best = p;
     }
   }
   return bestScore > 0 ? best : undefined;
 }
 
-/** Normalize a spoken/typed date into a calendar ISO string (yyyy-mm-dd). */
-function normalizeDate(input: string): string | null {
-  const s = input.trim();
-  const d = /^\d{4}-\d{2}-\d{2}$/.test(s) ? new Date(`${s}T00:00:00`) : new Date(s);
-  if (Number.isNaN(d.getTime())) return null;
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
-}
-
+/**
+ * Execute a Realtime tool call against the store and return a short, natural
+ * result string the model can read back to the guest. Uses store.getState() so
+ * it never needs to be a hook.
+ */
 function runToolCall(name: string, args: Record<string, unknown>): string {
   const store = useExperienceStore.getState();
 
   switch (name) {
-    case "show_category": {
-      const category = String(args.category ?? "") as CategoryId;
-      store.runCommand({ command: "show-category", category });
-      return `(Showing ${category}. Invite the guest to look, briefly.)`;
-    }
     case "select_product": {
       const wanted = String(args.name ?? "").toLowerCase().trim();
       if (!wanted) return "Which piece would you like to see?";
-      // Search the active category first, then EVERY category — so the piece is
-      // found even before its category is open, or if the category just changed.
-      const ids = CATEGORIES.map((c) => c.id);
-      const order = store.activeCategory
-        ? [store.activeCategory, ...ids.filter((id) => id !== store.activeCategory)]
-        : ids;
-      for (const catId of order) {
-        const opt = matchOption(getCategoryOptions(catId), wanted);
-        if (opt) {
-          if (store.activeCategory !== catId) {
-            store.runCommand({ command: "show-category", category: catId });
-          }
-          store.selectProduct({
-            id: opt.id,
-            categoryId: opt.categoryId,
-            name: opt.name,
-            priceLabel: opt.priceLabel,
-          });
-          return `Selected the ${opt.name}.`;
-        }
-      }
-      return "I couldn't find that piece.";
+      const p = matchProduct(wanted);
+      if (!p) return "I couldn't find that piece.";
+      store.selectProduct({ id: p.id, name: p.name, priceLabel: p.priceLabel });
+      return `Selected the ${p.name}.`;
     }
     case "add_to_cart": {
       const wanted = String(args.name ?? "").toLowerCase().trim();
       let piece: SelectedProduct | undefined;
       if (wanted) {
-        for (const catId of CATEGORIES.map((c) => c.id)) {
-          const opt = matchOption(getCategoryOptions(catId), wanted);
-          if (opt) {
-            piece = { id: opt.id, categoryId: opt.categoryId, name: opt.name, priceLabel: opt.priceLabel };
-            break;
-          }
-        }
+        const p = matchProduct(wanted);
+        if (p) piece = { id: p.id, name: p.name, priceLabel: p.priceLabel };
       } else if (store.selectedProduct) {
         piece = store.selectedProduct;
       }
@@ -145,6 +105,9 @@ function runToolCall(name: string, args: Record<string, unknown>): string {
     }
     case "remove_from_cart": {
       const wanted = String(args.name ?? "").toLowerCase().trim();
+      // Guard the empty string — `"".includes("")` is true, so a blank name would
+      // otherwise silently remove the first bag item the guest never named.
+      if (!wanted) return "(Which piece should I take out of the bag?)";
       const item = store.cart.find(
         (c) => c.name.toLowerCase().includes(wanted) || wanted.includes(c.name.toLowerCase()),
       );
@@ -193,7 +156,16 @@ function runToolCall(name: string, args: Record<string, unknown>): string {
       const method = String(args.method ?? "");
       if (!PAYMENT_METHODS.some((m) => m.id === method)) return "(That payment option isn't available.)";
       store.updateCheckout({ paymentMethod: method as PaymentMethodId }, true);
-      if (useExperienceStore.getState().checkoutStep === "details") store.setCheckoutStep("payment");
+      // Only advance to payment once the contact details are complete — the same
+      // gate go_to_payment + the "Continue to payment" button use. Otherwise a
+      // guest who names a method early could reach Pay with a blank order.
+      const c = useExperienceStore.getState().checkout;
+      const detailsComplete = c.name.trim() && isEmail(c.email) && c.phone.trim();
+      if (useExperienceStore.getState().checkoutStep === "details") {
+        if (detailsComplete) store.setCheckoutStep("payment");
+        else
+          return "(Payment method noted. Still need the name, a valid email, and phone before payment — ask for whatever's missing.)";
+      }
       return "(Payment method set. When the guest is ready, place the order.)";
     }
     case "go_to_payment": {
@@ -231,66 +203,14 @@ function runToolCall(name: string, args: Record<string, unknown>): string {
     case "place_order": {
       const st = useExperienceStore.getState();
       if (st.cart.length === 0) return "(The bag is empty — there's nothing to order.)";
+      const c = st.checkout;
+      if (!c.name.trim() || !isEmail(c.email) || !c.phone.trim()) {
+        return "(Can't place the order yet — still need the name, a valid email, and phone. Ask for what's missing.)";
+      }
       if (st.checkoutStep === "details") st.setCheckoutStep("payment");
       void st.placeOrder();
       return "(Placing the order now — reassure the guest warmly while it completes.)";
     }
-    case "book_appointment":
-      store.runCommand({ command: "book-appointment" });
-      return "(The calendar is open. Don't announce it — ask which day and time suits them.)";
-    case "set_appointment": {
-      if (store.demoFlow !== "booking") store.runCommand({ command: "book-appointment" });
-      const patch: Partial<BookingForm> = {};
-      if (args.reason != null && String(args.reason).trim()) patch.service = String(args.reason).trim();
-      if (args.date != null && String(args.date).trim()) {
-        const iso = normalizeDate(String(args.date));
-        if (iso) patch.date = iso;
-      }
-      if (args.time != null && String(args.time).trim()) patch.time = String(args.time).trim();
-      if (args.name != null && String(args.name).trim()) patch.name = String(args.name).trim();
-      if (args.email != null && String(args.email).trim()) patch.email = String(args.email).trim();
-      if (args.phone != null && String(args.phone).trim()) patch.phone = String(args.phone).trim();
-      if (args.notes != null && String(args.notes).trim()) patch.notes = String(args.notes).trim();
-      if (Object.keys(patch).length === 0) {
-        return "(Nothing to set — ask which day and time suits them.)";
-      }
-      store.updateBooking(patch, true);
-      const b = useExperienceStore.getState().booking;
-      // Once a day and time are chosen, move on to collecting contact details.
-      if (b.date && b.time && useExperienceStore.getState().bookingStep === "schedule") {
-        store.setBookingStep("details");
-      }
-      if (!b.date || !b.time) return "(Set. Ask for whichever of the day or time is still missing.)";
-      const missing: string[] = [];
-      if (!b.name.trim()) missing.push("name");
-      if (!isEmail(b.email)) missing.push("email");
-      if (!b.phone.trim()) missing.push("phone");
-      if (missing.length > 0) {
-        return `(Booked for ${b.date} at ${b.time}. Still need their ${missing.join(" and ")}.)`;
-      }
-      return "(Everything's set. Confirm with the guest, then book it.)";
-    }
-    case "confirm_appointment": {
-      const b = useExperienceStore.getState().booking;
-      const missing: string[] = [];
-      if (!b.date) missing.push("a date");
-      if (!b.time) missing.push("a time");
-      if (!b.name.trim()) missing.push("their name");
-      if (!isEmail(b.email)) missing.push("a valid email");
-      if (!b.phone.trim()) missing.push("a phone number");
-      if (missing.length > 0) return `(Can't book yet — still need ${missing.join(", ")}.)`;
-      void useExperienceStore.getState().confirmBooking();
-      return "(Booking the appointment now — reassure the guest warmly.)";
-    }
-    case "capture_lead":
-      store.runCommand({ command: "request-info" });
-      return "(The details form is open. Ask for the guest's name and email.)";
-    case "connect_human":
-      store.runCommand({ command: "connect-human" });
-      return "(Connecting a concierge. Reassure the guest a person will be with them shortly.)";
-    case "back_to_boutique":
-      store.runCommand({ command: "back-to-boutique" });
-      return "Back to the boutique window.";
     case "start_over":
       store.runCommand({ command: "start-over" });
       return "Starting over.";

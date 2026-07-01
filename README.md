@@ -31,43 +31,44 @@ Scripts: `npm run dev` · `npm run build` · `npm run start` · `npm run lint` �
 
 ## What you'll see
 
-- **Screen 1 — Boutique Window:** five categories (Watches, Jewelry, Bags,
-  Fragrances, Accessories) presented in a 100vh no-scroll scene — a horizontal
-  arc on desktop/tablet, and a swipeable single-hero carousel on phones — with
-  the Aurelis orb present.
-- **Screen 2 — Luminous Atelier:** tap a category (or say "show watches") and the
-  camera dollies in; the orb sits central and the product options orbit it with
-  hover/tap-to-focus interactions.
-- **Voice-first controls:** mic (bottom-center), a hidden text fallback, a
-  category rail, and demo action buttons. Live voice uses OpenAI Realtime; with
-  no key it degrades to browser speech / text.
-- **Demo-safe flows:** Checkout, Booking (live calendar), Stay-in-Touch, and
-  Concierge handoff — real-feeling, with no real backend actions.
+- **One boutique home page:** the hand-picked collection (Aurora Chronograph,
+  Aurelis Connect, Cascade Diamond Necklace, Atelier Top Handle, Pearl Oud,
+  Sculpted Sunglasses) in a 100vh no-scroll 3D scene — a horizontal arc on
+  desktop/tablet, a swipeable single-hero carousel on phones — with the Aurelis
+  orb present. No categories, no second screen.
+- **Select → checkout:** tap a piece (or say "I'll take the Cascade Necklace") to
+  focus it, add it to your bag, and Aurelis guides you through checkout.
+- **Voice-first controls:** mic (bottom-center), a hidden text fallback, an
+  Add-to-Bag chip, and a Checkout button. Live voice uses OpenAI Realtime; with no
+  key it degrades to browser speech / text.
+- **Demo-safe checkout:** a real-feeling three-screen flow (details → payment →
+  confirmation) with no real backend actions; card data is local-only.
 
 ## Project structure
 
 ```
 app/                     # Next App Router + /api/realtime-session route
 components/
-  experience/            # AurelisExperience, scenes, camera, transition
-  three/                 # Canvas, orb, panels, products, lights, postprocessing
+  experience/            # AurelisExperience, boutique scene, camera, preloader
+  three/                 # Canvas, orb, floating pieces, products, lights, postprocessing
   voice/                 # mic, caption, text fallback, status, controller
-  overlays/              # brand, controls, demo-safe flow overlays
-config/                  # categories, options, scenes, motion, agent, intents
+  overlays/              # brand, controls, cart, checkout
+config/                  # products, scenes, motion, agent, voice-intents, demo-flows
 lib/
   realtime/              # OpenAI Realtime session + client + fallback
   demo/                  # demo-safe actions, receipts, validation
   stores/                # Zustand experience store
-types/                   # shared domain types
-public/                  # references, products/<category>, models, textures
+types/                   # shared domain types (product, experience, demo, voice)
+public/                  # models/products/*.glb, textures, references
 docs/                    # art direction, asset pipeline, demo rules, realtime
 ```
 
 ## Adding real assets
 
-Drop product cutouts into `public/products/<category>/`, GLB models into
-`public/models/`, and point a `config/*` entry at them. The scene swaps the
-placeholder automatically — see [`docs/ASSET_PIPELINE.md`](docs/ASSET_PIPELINE.md).
+Drop a GLB into `public/models/products/` (and/or a cutout image into
+`public/products/`), then add or point a `config/products.ts` entry at it. The
+scene swaps the visual automatically — see
+[`docs/ASSET_PIPELINE.md`](docs/ASSET_PIPELINE.md).
 
 ## Docs
 

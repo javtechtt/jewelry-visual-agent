@@ -3,7 +3,6 @@
 // sent to a real payment processor, CRM, calendar, or messaging provider.
 // See docs/DEMO_SAFE_RULES.md.
 
-import type { CategoryId } from "./category";
 import type { DemoFlowId } from "./experience";
 
 export interface ContactDetails {
@@ -16,7 +15,6 @@ export interface ContactDetails {
  *  only through tools (add_to_cart / remove_from_cart). */
 export interface CartItem {
   id: string;
-  categoryId: CategoryId;
   name: string;
   priceLabel: string;
   qty: number;
@@ -26,9 +24,6 @@ export interface CartItem {
 export type PaymentMethodId = "card" | "boutique" | "invoice";
 
 export interface CheckoutPayload extends ContactDetails {
-  productId: string;
-  productName: string;
-  priceLabel: string;
   paymentMethod: PaymentMethodId;
   consent: boolean;
 }
@@ -55,47 +50,10 @@ export interface CardDetails {
   cvc: string;
 }
 
-/** The booking journey screens (+ the transient processing state). */
-export type BookingStep = "schedule" | "details" | "processing" | "confirmation";
-
-/** Live appointment form. Lives in the store so the agent can fill the reason,
- *  date, time, and contact details in real time. `date` is an ISO yyyy-mm-dd
- *  string; `service` is the appointment reason (empty = the category default). */
-export interface BookingForm {
-  service: string;
-  date: string;
-  time: string;
-  name: string;
-  email: string;
-  phone: string;
-  notes: string;
-}
-
-export interface BookingPayload extends ContactDetails {
-  categoryId: CategoryId | "general";
-  service: string;
-  date: string;
-  time: string;
-  notes: string;
-}
-
-export interface LeadPayload extends ContactDetails {
-  interest: string;
-  notes: string;
-  consent: boolean;
-}
-
-export interface HandoffPayload extends ContactDetails {
-  topic: string;
-  /** How the guest would like a human to follow up. */
-  channel: "voice" | "email" | "in-boutique";
-  notes: string;
-}
-
 /** A demo confirmation artifact shown after a simulated flow completes. */
 export interface DemoReceipt {
   kind: DemoFlowId;
-  /** e.g. DEMO-ORD-1048 / DEMO-BOOK-2381 / DEMO-LEAD-7820 / DEMO-APT-4309. */
+  /** e.g. DEMO-ORD-1048. */
   reference: string;
   /** Human-readable creation label (set client-side). */
   createdLabel: string;

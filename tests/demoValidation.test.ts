@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { isEmail, isPhone, validateCheckout, validateBooking, hasErrors } from "@/lib/demo/demoValidation";
+import { isEmail, isPhone, validateCheckout, hasErrors } from "@/lib/demo/demoValidation";
 
 describe("demo validation", () => {
   it("isEmail accepts well-formed addresses only", () => {
@@ -22,9 +22,14 @@ describe("demo validation", () => {
     expect(errs.email).toBeTruthy();
   });
 
-  it("validateBooking requires a date and a time", () => {
-    const errs = validateBooking({ name: "A", email: "a@b.co", phone: "+1 415 555 0142" });
-    expect(errs.date).toBeTruthy();
-    expect(errs.time).toBeTruthy();
+  it("validateCheckout passes with full, valid details", () => {
+    const errs = validateCheckout({
+      name: "Aria",
+      email: "aria@example.com",
+      phone: "+1 415 555 0142",
+      paymentMethod: "card",
+      consent: true,
+    });
+    expect(hasErrors(errs)).toBe(false);
   });
 });

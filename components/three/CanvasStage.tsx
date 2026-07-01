@@ -109,10 +109,10 @@ export default function CanvasStage({
         <SceneCamera />
         <LightRig />
         {/* The persistent room + concierge orb live in their OWN Suspense, kept
-            separate from the scene below. A scene/category change makes the
-            incoming products suspend while their assets load; if the room shared
-            that boundary it would unmount to black for ~1s (the "blink"). Split
-            so only the products suspend — the room/orb never vanish. */}
+            separate from the scene below. The pieces suspend while their GLBs
+            load; if the room shared that boundary it would unmount to black for
+            ~1s (the "blink"). Split so only the pieces suspend — the room/orb
+            never vanish. */}
         <Suspense fallback={null}>
           <EnvironmentStage />
           <CursorFloorGlow />

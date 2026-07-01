@@ -1,18 +1,12 @@
-// Demo-safe action handlers. Each simulates processing latency and returns a
-// local receipt. They are intentionally isolated from any real provider so that
-// swapping in a production integration is a one-file change.
+// Demo-safe action handler. Simulates processing latency and returns a local
+// receipt. Intentionally isolated from any real provider so that swapping in a
+// production integration is a one-file change.
 //
 // PRODUCTION INTEGRATION POINTS are marked with TODO(production). Until those
-// are wired, NOTHING here performs a real payment, booking, CRM write, email,
-// SMS, calendar event, or inventory change. See docs/DEMO_SAFE_RULES.md.
+// are wired, NOTHING here performs a real payment, CRM write, email, SMS, or
+// inventory change. See docs/DEMO_SAFE_RULES.md.
 
-import type {
-  BookingPayload,
-  CheckoutPayload,
-  DemoReceipt,
-  HandoffPayload,
-  LeadPayload,
-} from "@/types/demo";
+import type { CheckoutPayload, DemoReceipt } from "@/types/demo";
 import { createReceipt } from "./demoReceipts";
 
 /** Simulated network/processing delay so the UI can show a real-feeling state. */
@@ -40,35 +34,5 @@ export async function runCheckout(payload: {
     "checkout",
     summary,
     "A confirmation has been sent to your email. Our team will be in touch about delivery.",
-  );
-}
-
-export async function runBooking(payload: BookingPayload): Promise<DemoReceipt> {
-  await simulate();
-  // TODO(production): create a calendar event / appointment request here.
-  return createReceipt(
-    "booking",
-    `${payload.service} · ${payload.date}${payload.time ? ` · ${payload.time}` : ""}`,
-    "Your appointment is reserved. We've sent the details to your email and our team will confirm shortly.",
-  );
-}
-
-export async function submitLead(payload: LeadPayload): Promise<DemoReceipt> {
-  await simulate(1100);
-  // TODO(production): push to CRM / notify the boutique here.
-  return createReceipt(
-    "lead",
-    `${payload.name} · ${payload.interest}`,
-    "Thank you — a stylist will be in touch with you very soon.",
-  );
-}
-
-export async function requestHandoff(payload: HandoffPayload): Promise<DemoReceipt> {
-  await simulate(1100);
-  // TODO(production): create a live concierge handoff / ticket here.
-  return createReceipt(
-    "handoff",
-    `${payload.topic} · via ${payload.channel}`,
-    "You're in the queue — a concierge will be with you in just a moment.",
   );
 }

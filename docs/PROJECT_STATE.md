@@ -1,7 +1,7 @@
 # Aurelis — Project State Snapshot
 
 > A durable, self-contained summary of the project so context survives a
-> conversation compaction. Last updated 2026-06-25.
+> conversation compaction. Last updated 2026-06-30.
 
 ## 1. What it is
 
@@ -18,12 +18,13 @@ through tool/function calls.
 ### Hard constraints (do not regress)
 - Stays **3D/2.5D scene-first** — never a flat UI / card grid / chatbot widget.
 - Aesthetic = **light premium** (ivory / pearl / champagne), **100vh no-scroll**.
-- Two screens, camera-driven: **Boutique Window** (5 category panels) →
-  **Luminous Atelier** (big orb + orbiting product options).
+- **Single home page** — one camera-framed scene showing the collection directly
+  (no categories, no second screen). The guest selects a piece; Aurelis takes
+  them to checkout.
 - Voice = OpenAI Realtime, model **`gpt-realtime-2`**. `OPENAI_API_KEY` is
   server-only; no key → graceful `mode:"mock"` (Web Speech / text fallback).
-- Demo-safe backend: checkout/booking/lead/handoff do nothing real
-  (`TODO(production)` markers in `lib/demo/`).
+- Demo-safe backend: checkout does nothing real (`TODO(production)` markers in
+  `lib/demo/`); card data is local-only and never transmitted.
 
 ## 2. Stack & commands
 
@@ -41,12 +42,14 @@ Next.js 16 (Turbopack) · React 19 · React Three Fiber 9 · three 0.184 · drei
 ## 3. Architecture
 
 ### Store = single source of truth — `lib/stores/useExperienceStore.ts`
-Holds: `scene`, `activeCategory`, `selectedProduct`, **`cart: CartItem[]`**,
-`agentState`, `realtimeStatus`, `micActive`, `demoFlow`, `view` (responsive),
-`lastReceipt`. Actions: `enterCategory`, `selectProduct`,
-**`addToCart`/`removeFromCart`/`clearCart`**, `openDemoFlow`, `runCommand`,
-`backToBoutique`, `startOver`, etc. **The agent only mutates state via tools;
-it never fabricates state.**
+Holds: `scene` (constant `"boutique-window"`), `selectedProduct`,
+**`cart: CartItem[]`**, `agentState`, `realtimeStatus`, `micActive`, `demoFlow`
+(only `"checkout"`), `view` (responsive), `checkout*` (live form), `lastReceipt`.
+Actions: `selectProduct` (focus only), **`addToCart`/`removeFromCart`/`clearCart`**,
+`updateCheckout`/`placeOrder`, `openDemoFlow`, `runCommand`, `startOver`.
+`removeFromCart` auto-closes checkout if it empties the bag; `placeOrder` refuses
+to finalize without complete contact details. **The agent only mutates state via
+tools; it never fabricates state.**
 
 ### Voice / Realtime
 - **Server:** `app/api/realtime-session/route.ts` → `lib/realtime/createRealtimeSession.ts`
@@ -60,26 +63,28 @@ it never fabricates state.**
   `agentState`, appends the audio element to the DOM, greets on channel open.
   Fallback: `lib/realtime/voiceFallback.ts` (Web Speech).
 - **`components/voice/VoiceController.tsx`** — `runToolCall(name,args)` maps tool
-  calls to store actions. `select_product`/`add_to_cart` search **every**
-  category with fuzzy word-overlap matching and **auto-open** the right one.
+  calls to store actions. `select_product`/`add_to_cart` fuzzy-match the spoken
+  name against the flat `PRODUCTS` list (`matchProduct`).
 - **`config/agent.ts`** — `AGENT` (persona/lines/voice), `AGENT_INSTRUCTIONS`
   (brief; real concierge; **never announce opening a screen — guide instead**;
-  product catalog injected so the model uses exact names), `AGENT_TOOLS`.
+  the flat product catalog is injected so the model uses exact names), `AGENT_TOOLS`.
 
-**Tools:** `show_category`, `select_product`, `add_to_cart`, `remove_from_cart`,
-`start_checkout`, `book_appointment`, `capture_lead`, `connect_human`,
-`back_to_boutique`, `start_over`. Flow-opening tools return *directives*
-(e.g. "Checkout is open. Do NOT announce it — ask for the name on the order").
+**Tools:** `select_product`, `add_to_cart`, `remove_from_cart`, `start_checkout`,
+`set_checkout_details`, `set_payment_method`, `set_payment_details`,
+`go_to_payment`, `place_order`, `start_over`. Checkout-advancing tools re-validate
+contact details before reaching payment / placing the order; flow-opening tools
+return *directives* (e.g. "Checkout is open. Do NOT announce it — ask for the
+name on the order").
 
 ### Cart & checkout
 - `lib/cart.ts` — `parsePrice`, `cartCount`, `cartTotal`, `cartTotalLabel`.
 - `components/overlays/CartOverlay.tsx` — "Your Bag" glass panel (top-right):
-  items, qty, line prices, total, remove, Checkout button. Hidden when empty.
+  items, qty, line prices, total, remove, Checkout button. Hidden when empty or
+  while checkout is open.
 - `components/overlays/DemoCheckoutOverlay.tsx` — checkout over the **whole
-  cart** (summary → details → review → processing → confirmation); clears the
-  cart on order. `lib/demo/demoActions.ts#runCheckout` takes `{items,total,…}`.
-- Other flows (booking/lead/handoff) + `DemoFlowShell.tsx` still use per-flow
-  `config/demo-flows.ts` copy. **Only checkout has been de-"demo"-ed so far.**
+  cart** (details → payment → confirmation); clears the cart on order.
+  `lib/demo/demoActions.ts#runCheckout` takes `{items,total,…}`. `DemoFlowShell`
+  is the shared modal chrome (checkout is the only remaining flow).
 
 ### 3D scene
 - `components/three/CanvasStage.tsx` — `<Canvas shadows dpr={QUALITY[view].dpr}
@@ -89,14 +94,12 @@ it never fabricates state.**
   Suspense**, PostProcessing, a FrameloopManager (pauses render on tab-hidden),
   and a ContextLossGuard. Splitting the Suspense keeps the room from blacking out
   during a scene change (the old "blink"); `AssetPreloader` warms assets on idle.
-- `BoutiqueWindowScene` — **desktop/landscape**: `FloatingCategoryObject` per
-  category in a horizontal arc. **Portrait (phones)**: a swipeable single-hero
-  carousel (auto-advances unless reduced-motion). The orb is rendered by
+- `BoutiqueWindowScene` (the only scene) — **desktop/landscape**:
+  `FloatingProductObject` per piece in a horizontal arc; long product names are
+  vertically **staggered** so adjacent labels don't collide. **Portrait (phones)**:
+  a swipeable single-hero carousel (auto-advances unless reduced-motion). Tapping
+  a piece focuses it (→ the bottom-left Add-to-Bag chip). The orb is rendered by
   CanvasStage, not the scene.
-- `LuminousAtelierScene` → `AtelierOption` (per product option): glass case
-  (`ProductDisplayPanel`) + `ProductObject` (cutout image) **spin together as one
-  turntable**; hover scales the whole case; the **label fades by orbit position
-  (front half visible)**; selecting a piece **rotates the ring to it and holds**.
 - `components/three/ProductObject.tsx` — renders, in priority: GLB **model**
   (auto-fit + center; error-boundary falls back to the image), else **cutout**
   image (two `FrontSide` planes — front + back-rotated-180° so both faces are
@@ -112,22 +115,22 @@ it never fabricates state.**
 - `components/three/PostProcessing.tsx` — `EffectComposer multisampling={0}`,
   `SMAA`, `Bloom` (intensity 0.92, **luminanceThreshold 1.1, smoothing 0.08**,
   radius 0.8, mipmapBlur), `Vignette`, `ToneMapping` **ACES_FILMIC**.
-- `config/scenes.ts` — `SCENES` + responsive `SCENE_VIEWS`,
-  `getSceneCamera`/`getSceneOrb`, `BOUTIQUE_LAYOUT`, `ATELIER_LAYOUT`.
+- `config/scenes.ts` — the single `SCENES["boutique-window"]` + responsive
+  `SCENE_VIEWS`, `getSceneCamera`/`getSceneOrb`, and `BOUTIQUE_LAYOUT` (arc spread
+  / object scale / `labelStagger` / label distance per view).
 - `config/responsive.ts` — `ViewMode` (desktop/landscape/portrait), `QUALITY`
   (**dpr cap 1.5**, reflector + contact-shadow res 512).
 
-### Categories & assets
-- `config/categories.ts` — 5 categories: **watches, jewelry, bags, fragrances,
-  accessories** (gifts & services were removed). Each gets a `cutout` (Unsplash
-  hero) + a `model` (GLB) from `config/showcase-images.ts`
-  (`CATEGORY_SHOWCASE`, `CATEGORY_MODEL`, `OPTION_SHOWCASE`).
-- `config/category-options.ts` — 4 product options per category (name + price).
-- `public/models/products/*.glb` — **compressed** (meshopt geometry + 2K WebP
-  textures; ~205 MB → ~9.5 MB). They load via drei `useGLTF`, which enables the
+### Products & assets
+- `config/products.ts` — the flat `PRODUCTS[]` collection (6 hand-picked pieces:
+  Aurora Chronograph, Aurelis Connect, Cascade Diamond Necklace, Atelier Top
+  Handle, Pearl Oud, Sculpted Sunglasses). Each is `{ id, name, priceLabel,
+  tagline, accent, shape, cutout, model }`; `types/product.ts` holds the types.
+- `public/models/products/*.glb` — one GLB per piece, **compressed** (meshopt
+  geometry + 2K WebP textures). They load via drei `useGLTF`, which enables the
   meshopt + Draco decoders by default — **no loader config needed**.
-- Showcase images are Unsplash (`?w=760&h=1000…fit=crop`, portrait to match the
-  case). They're the Atelier option visuals + the GLB fallback.
+- `cutout` fallbacks are Unsplash (`?w=760&h=1000…fit=crop`, portrait) shown only
+  if a GLB fails to load. `AssetPreloader` warms the GLBs + images on idle.
 
 ## 4. Notable decisions / fixes (so they aren't re-litigated)
 - **Whole-page blink** = `EffectComposer multisampling={4}` emitting black frames
@@ -150,10 +153,9 @@ it never fabricates state.**
   `antialias:false` (SMAA does AA); removed unused Geist Mono font + `gsap` dep.
 
 ## 5. Known TODOs / not done
-- **Voice-fill is DONE** — the agent fills checkout (`set_checkout_details`,
-  `set_payment_method`, `set_payment_details`, `go_to_payment`, `place_order`)
-  and booking (`set_appointment`, `confirm_appointment`) live; handlers in
-  `components/voice/VoiceController.tsx`, tools in `config/agent.ts`.
+- **Voice-fill is DONE** — the agent fills checkout live (`set_checkout_details`,
+  `set_payment_method`, `set_payment_details`, `go_to_payment`, `place_order`);
+  handlers in `components/voice/VoiceController.tsx`, tools in `config/agent.ts`.
 - **Real backends** are still no-ops — `TODO(production)` in
   `lib/demo/demoActions.ts` (payment / CRM / calendar / handoff / email).
 - **Observability** — `lib/log.ts#reportError` console-logs only; wire Sentry

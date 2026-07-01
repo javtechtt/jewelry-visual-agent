@@ -1,19 +1,20 @@
 "use client";
 
-// A single floating category in the Boutique Window: a frosted glass panel, a
-// placeholder product object, and a minimal label. Hover blooms the panel +
-// product; clicking (or saying the category) transitions into the Atelier.
+// A single floating piece in the boutique showcase: the product object (GLB or
+// placeholder) and a minimal label. Hover blooms the piece; clicking (or saying
+// its name) focuses/selects it so Aurelis — or the guest — can add it to the bag
+// and head to checkout.
 
 import { useState } from "react";
 import { Float, Html } from "@react-three/drei";
 import type { ThreeEvent } from "@react-three/fiber";
 import { useExperienceStore } from "@/lib/stores/useExperienceStore";
-import type { Category } from "@/types/category";
+import type { Product } from "@/types/product";
 import type { Vec3 } from "@/types/experience";
 import ProductObject from "./ProductObject";
 
-interface FloatingCategoryObjectProps {
-  category: Category;
+interface FloatingProductObjectProps {
+  product: Product;
   position: Vec3;
   rotationY?: number;
   /** Visual product scale — defaults to the desktop value (1). */
@@ -26,17 +27,19 @@ interface FloatingCategoryObjectProps {
   labelDistance?: number;
 }
 
-export default function FloatingCategoryObject({
-  category,
+export default function FloatingProductObject({
+  product,
   position,
   rotationY = 0,
   objectScale = 1,
   hitScale = 1,
   labelY = -0.95,
   labelDistance = 8,
-}: FloatingCategoryObjectProps) {
+}: FloatingProductObjectProps) {
   const [hovered, setHovered] = useState(false);
-  const enterCategory = useExperienceStore((s) => s.enterCategory);
+  const selectProduct = useExperienceStore((s) => s.selectProduct);
+  const selectedId = useExperienceStore((s) => s.selectedProduct?.id);
+  const selected = selectedId === product.id;
 
   const onOver = (e: ThreeEvent<PointerEvent>) => {
     e.stopPropagation();
@@ -50,27 +53,27 @@ export default function FloatingCategoryObject({
   };
   const onClick = (e: ThreeEvent<MouseEvent>) => {
     e.stopPropagation();
-    enterCategory(category.id);
+    selectProduct({ id: product.id, name: product.name, priceLabel: product.priceLabel });
   };
 
   return (
     <group position={position} rotation={[0, rotationY, 0]}>
       <Float speed={1.1} rotationIntensity={0.2} floatIntensity={0.5}>
         <group onPointerOver={onOver} onPointerOut={onOut} onClick={onClick}>
-          {/* Invisible hit target — keeps the whole category area hoverable /
-              clickable now that the visible glass panel is gone. Enlarged on
-              touch (hitScale) for comfortable tapping. */}
+          {/* Invisible hit target — keeps the whole piece area hoverable /
+              clickable. Enlarged on touch (hitScale) for comfortable tapping. */}
           <mesh position={[0, 0.08, 0]}>
             <planeGeometry args={[1.1 * hitScale, 1.45 * hitScale]} />
             <meshBasicMaterial transparent opacity={0} depthWrite={false} />
           </mesh>
           <group position={[0, 0.08, 0.16]} scale={objectScale}>
             <ProductObject
-              shape={category.shape}
-              accent={category.accent}
+              shape={product.shape}
+              accent={product.accent}
               hovered={hovered}
-              cutout={category.cutout}
-              model={category.model}
+              focused={selected}
+              cutout={product.cutout}
+              model={product.model}
             />
           </group>
           <Html
@@ -81,8 +84,10 @@ export default function FloatingCategoryObject({
             style={{ pointerEvents: "none" }}
           >
             <div className="scene-label">
-              <span className="scene-label__name">{category.label}</span>
-              <span className="scene-label__hint">{hovered ? category.tagline : ""}</span>
+              <span className="scene-label__name">{product.name}</span>
+              <span className="scene-label__hint">
+                {selected ? product.priceLabel : hovered ? product.tagline : ""}
+              </span>
             </div>
           </Html>
         </group>

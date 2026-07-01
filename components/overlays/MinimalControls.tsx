@@ -1,76 +1,64 @@
 "use client";
 
-// Minimal luxury controls — the click/touch fallback for everything that is
-// also voice-driven. Category chips (top), context + action clusters (bottom).
-// Config-driven from categories.ts; nothing here is a card grid.
+// Minimal luxury controls — the click/touch fallback for the voice-led flow.
+// Bottom-left: the focused piece + an Add-to-Bag action. Bottom-right: Checkout.
+// Everything here is also voice-driven; nothing is a card grid.
 
-import { motion } from "framer-motion";
-import { CATEGORIES } from "@/config/categories";
+import { AnimatePresence, motion } from "framer-motion";
 import { useExperienceStore } from "@/lib/stores/useExperienceStore";
 
 export default function MinimalControls() {
-  const scene = useExperienceStore((s) => s.scene);
-  const activeCategory = useExperienceStore((s) => s.activeCategory);
-  const enterCategory = useExperienceStore((s) => s.enterCategory);
-  const backToBoutique = useExperienceStore((s) => s.backToBoutique);
+  const selectedProduct = useExperienceStore((s) => s.selectedProduct);
+  const addToCart = useExperienceStore((s) => s.addToCart);
   const openDemoFlow = useExperienceStore((s) => s.openDemoFlow);
   const cart = useExperienceStore((s) => s.cart);
-  const selectedProduct = useExperienceStore((s) => s.selectedProduct);
+  const demoFlow = useExperienceStore((s) => s.demoFlow);
 
-  const inAtelier = scene === "luminous-atelier";
-  // Checkout needs something to buy — guard the empty-bag, nothing-selected case.
+  // Checkout needs something to buy — the bag, or a focused piece to fold in.
   const canCheckout = cart.length > 0 || selectedProduct !== null;
+  // Only prompt to add while the focused piece isn't already in the bag.
+  const showAdd =
+    selectedProduct !== null && !demoFlow && !cart.some((c) => c.id === selectedProduct.id);
 
   return (
     <>
-      {/* Top-center category rail */}
-      <motion.nav
-        className="category-rail"
-        initial={{ opacity: 0, y: -8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1], delay: 0.3 }}
-        aria-label="Boutique categories"
-      >
-        {CATEGORIES.map((category) => (
-          <button
-            type="button"
-            key={category.id}
-            className={`chip${activeCategory === category.id ? " chip--active" : ""}`}
-            onClick={() => enterCategory(category.id)}
-            style={{ "--chip-glow": category.accent.glow } as React.CSSProperties}
-          >
-            {category.label}
-          </button>
-        ))}
-      </motion.nav>
-
-      {/* Bottom-left context cluster */}
+      {/* Bottom-left: the piece in focus + add-to-bag */}
       <div className="controls controls--left">
-        {inAtelier && (
-          <button type="button" className="ghost-btn" onClick={backToBoutique}>
-            ← Boutique
-          </button>
-        )}
+        <AnimatePresence>
+          {showAdd && selectedProduct && (
+            <motion.div
+              key={selectedProduct.id}
+              className="focus-chip"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 10 }}
+              transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
+            >
+              <span className="focus-chip__meta">
+                <span className="focus-chip__name">{selectedProduct.name}</span>
+                <span className="focus-chip__price">{selectedProduct.priceLabel}</span>
+              </span>
+              <button
+                type="button"
+                className="action-btn action-btn--accent"
+                onClick={() => addToCart(selectedProduct)}
+              >
+                Add to Bag
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
-      {/* Bottom-right action cluster (demo-safe) */}
+      {/* Bottom-right: checkout */}
       <div className="controls controls--right">
-        <button type="button" className="action-btn" onClick={() => openDemoFlow("booking")}>
-          Book
-        </button>
         <button
           type="button"
-          className="action-btn"
+          className="action-btn action-btn--accent"
           onClick={() => openDemoFlow("checkout")}
           disabled={!canCheckout}
         >
           Checkout
-        </button>
-        <button type="button" className="action-btn" onClick={() => openDemoFlow("lead")}>
-          Stay in Touch
-        </button>
-        <button type="button" className="action-btn action-btn--accent" onClick={() => openDemoFlow("handoff")}>
-          Concierge
         </button>
       </div>
     </>

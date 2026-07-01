@@ -143,14 +143,8 @@ export function DemoConfirmation({
   receipt: DemoReceipt;
   onDone: () => void;
 }) {
-  const badge =
-    receipt.kind === "checkout"
-      ? "Order confirmed"
-      : receipt.kind === "booking"
-        ? "Appointment confirmed"
-        : receipt.kind === "lead"
-          ? "Thank you"
-          : "You're connected";
+  // Only the checkout flow remains; the confirmation is always an order.
+  const badge = "Order confirmed";
   return (
     <motion.div
       className="demo-confirm"

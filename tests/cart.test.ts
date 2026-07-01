@@ -4,7 +4,6 @@ import type { CartItem } from "@/types/demo";
 
 const item = (over: Partial<CartItem>): CartItem => ({
   id: "x",
-  categoryId: "watches",
   name: "X",
   priceLabel: "$0",
   qty: 1,

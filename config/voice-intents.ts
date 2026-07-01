@@ -1,53 +1,28 @@
 // Voice + text intent table. Recognized speech (Realtime/Web Speech) or typed
-// fallback text is matched against these phrases to produce a CommandId.
+// fallback text is matched against these phrases to produce a CommandId. The
+// live Realtime path drives the boutique via tool calls; this table backs the
+// browser-speech / text fallback.
 
-import type { CategoryId } from "@/types/category";
 import type { MatchedIntent, VoiceIntent } from "@/types/voice";
-import { CATEGORIES } from "./categories";
+import { PRODUCTS } from "./products";
 
-// One "show <category>" intent per category, derived from the category config.
-const categoryIntents: VoiceIntent[] = CATEGORIES.map((category) => ({
-  id: "show-category",
-  category: category.id,
-  description: `Open the ${category.label} world`,
-  phrases: [
-    `show ${category.label.toLowerCase()}`,
-    `show me ${category.label.toLowerCase()}`,
-    `open ${category.label.toLowerCase()}`,
-    `${category.label.toLowerCase()}`,
-  ],
-}));
+// One "select <piece>" intent per product, derived from the collection.
+const productIntents: VoiceIntent[] = PRODUCTS.map((product) => {
+  const name = product.name.toLowerCase();
+  return {
+    id: "select-product",
+    productId: product.id,
+    description: `Focus the ${product.name}`,
+    phrases: [name, `the ${name}`, `show ${name}`, `show me ${name}`],
+  };
+});
 
 export const VOICE_INTENTS: VoiceIntent[] = [
-  ...categoryIntents,
-  {
-    id: "book-appointment",
-    demoFlow: "booking",
-    description: "Open the demo appointment booking flow",
-    phrases: ["book appointment", "book an appointment", "make an appointment", "schedule a visit"],
-  },
+  ...productIntents,
   {
     id: "start-checkout",
-    demoFlow: "checkout",
-    description: "Open the demo checkout flow",
-    phrases: ["start checkout", "check out", "checkout", "buy this", "purchase"],
-  },
-  {
-    id: "connect-human",
-    demoFlow: "handoff",
-    description: "Request a human concierge handoff",
-    phrases: ["connect me to a human", "talk to a person", "human concierge", "speak to someone"],
-  },
-  {
-    id: "request-info",
-    demoFlow: "lead",
-    description: "Open the lead capture flow",
-    phrases: ["leave my details", "contact me", "request information", "stay in touch"],
-  },
-  {
-    id: "back-to-boutique",
-    description: "Return to the Boutique Window",
-    phrases: ["back to boutique", "back", "go back", "boutique window"],
+    description: "Open checkout for the bag",
+    phrases: ["start checkout", "check out", "checkout", "buy this", "buy it", "purchase", "pay"],
   },
   {
     id: "start-over",
@@ -58,7 +33,7 @@ export const VOICE_INTENTS: VoiceIntent[] = [
 
 /**
  * Match recognized/typed text against the intent table. Longer phrases are
- * tried first so "back to boutique" wins over the bare "back".
+ * tried first so a full piece name wins over a shorter, more generic phrase.
  */
 export function matchIntent(rawText: string): MatchedIntent | null {
   const text = rawText.trim().toLowerCase();
@@ -72,8 +47,7 @@ export function matchIntent(rawText: string): MatchedIntent | null {
     if (text === phrase || text.includes(phrase)) {
       return {
         command: intent.id,
-        category: intent.category,
-        demoFlow: intent.demoFlow,
+        productId: intent.productId,
         transcript: rawText,
       };
     }
@@ -83,12 +57,8 @@ export function matchIntent(rawText: string): MatchedIntent | null {
 
 /** Compact list of example commands for the text-fallback placeholder/help. */
 export const EXAMPLE_COMMANDS: string[] = [
-  "show watches",
-  "show jewelry",
-  "book appointment",
-  "start checkout",
-  "connect me to a human",
-  "back to boutique",
+  PRODUCTS[0].name,
+  PRODUCTS[2].name,
+  "checkout",
+  "start over",
 ];
-
-export const CATEGORY_IDS: CategoryId[] = CATEGORIES.map((c) => c.id);

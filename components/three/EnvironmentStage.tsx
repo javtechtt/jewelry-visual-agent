@@ -2,8 +2,8 @@
 
 // The boutique "room": a reflective floor, a soft back wall, contact shadows,
 // gentle fog for depth, and a procedural studio Environment built from
-// Lightformers (no external HDRI — works fully offline). Tints shift subtly
-// between the Boutique Window and Luminous Atelier scenes.
+// Lightformers (no external HDRI — works fully offline). Tinted to the light
+// premium (ivory / champagne) atmosphere of the boutique home page.
 
 import {
   ContactShadows,

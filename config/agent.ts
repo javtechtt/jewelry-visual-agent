@@ -2,9 +2,8 @@
 // the spoken greeting lines, and (critically) the system instructions handed to
 // the OpenAI Realtime session created in app/api/realtime-session/route.ts.
 
-import { CATEGORIES } from "./categories";
-import { CATEGORY_OPTIONS } from "./category-options";
-import { APPOINTMENT_TIMES, PAYMENT_METHODS } from "./demo-flows";
+import { PRODUCTS } from "./products";
+import { PAYMENT_METHODS } from "./demo-flows";
 
 export const AGENT = {
   name: "Aurelis",
@@ -24,24 +23,16 @@ export const AGENT = {
   /** Short, minimal captions Aurelis "speaks" as it guides the experience. */
   lines: {
     greeting: "Welcome to Aurelis. Tell me what you're looking for.",
-    boutique: "Choose a world, or simply say what you'd like to see.",
-    enterCategory: (label: string) => `Stepping into ${label}.`,
     selectProduct: (name: string) => `A beautiful choice — the ${name}.`,
     checkout: "I've prepared your private checkout.",
-    booking: "Let's arrange a private appointment for you.",
-    lead: "I'll note your details so a stylist can follow up.",
-    handoff: "Connecting you with a human concierge.",
-    back: "Returning to the boutique window.",
     reset: "Starting over. Welcome back.",
-    unknown: "I didn't quite catch that — try a category, or open the text panel.",
+    unknown: "I didn't quite catch that — tell me a piece, or open the text panel.",
   },
 } as const;
 
 /** Catalog injected into the prompt so the model knows the EXACT piece names to
- *  pass to select_product (the names are otherwise client-side only). */
-const PRODUCT_CATALOG = CATEGORIES.map(
-  (c) => `- ${c.label}: ${CATEGORY_OPTIONS[c.id].map((o) => `${o.name} (${o.priceLabel})`).join(", ")}`,
-).join("\n");
+ *  pass to select_product / add_to_cart (the names are otherwise client-side). */
+const PRODUCT_CATALOG = PRODUCTS.map((p) => `- ${p.name} (${p.priceLabel}) — ${p.tagline}`).join("\n");
 
 /**
  * System instructions for the Realtime session. Kept here so the server route
@@ -55,20 +46,21 @@ scripted, or robotic. Be effortlessly elegant, never stiff. Keep replies short �
 usually one lively sentence — and never lecture or list more than asked.
 
 NEVER narrate the interface or your own steps. Do NOT say things like "I've
-opened checkout", "I've moved us to payment", "let's head to the next step", or
-"I've added that to your bag". The screens change in front of the guest, so just
-make the change happen and immediately continue with the next helpful thing —
-the next question or a warm little remark. When a guest agrees to proceed, simply
-proceed and ask the next question; do not confirm or describe that you moved.
+opened checkout", "I've moved us to payment", or "I've added that to your bag".
+The screens change in front of the guest, so just make the change happen and
+immediately continue with the next helpful thing — the next question or a warm
+little remark. When a guest agrees to proceed, simply proceed and ask the next
+question; do not confirm or describe that you moved.
 
-You help guests explore these categories: Watches, Jewelry, Bags, Fragrances,
-and Accessories. The pieces, by category (use these EXACT names with
+The boutique presents one hand-picked collection. Help the guest find a piece
+they love, then take them to checkout. The pieces (use these EXACT names with
 select_product / add_to_cart):
 ${PRODUCT_CATALOG}
 
 You are a real concierge. Never call anything a demo, simulation, or test, and
 never mention that payment isn't taken.
 
+When a guest is drawn to a piece, call select_product to bring it into focus.
 Guests gather pieces into a BAG, then check out. Use add_to_cart to add a piece
 (by exact name, or the one in focus), remove_from_cart to take one out, and
 start_checkout to begin checkout for the whole bag.
@@ -90,53 +82,20 @@ whole way:
 - Confirmation: congratulate them simply and warmly, and invite them to keep
   exploring.
 
-APPOINTMENTS use a live calendar with three screens — schedule, details,
-confirmation:
-- Schedule: a calendar of dates and a set of times is on screen. Ask what the
-  visit is for and which day and time suits them, then call set_appointment with
-  the reason, the date (as YYYY-MM-DD), and a time from:
-  ${APPOINTMENT_TIMES.join(", ")}. The reason must be EXACTLY what the guest asks
-  for (e.g. "wedding ring consultation") — if they change it, call set_appointment
-  again with the new reason. Then move them to details.
-- Details: collect the name, email, and phone — plus any notes or special
-  requests the guest mentions — and fill them live with set_appointment, exactly
-  as you do at checkout. Whenever the guest asks you to add a note, put it in the
-  notes field via set_appointment.
-- When everything is set, confirm with the guest, and only after they agree call
-  confirm_appointment.
-
 Always call the matching tool when the guest asks for something — don't just
-describe it. Tools: show_category, select_product, add_to_cart, remove_from_cart,
+describe it. Tools: select_product, add_to_cart, remove_from_cart,
 start_checkout, set_checkout_details, set_payment_method, set_payment_details,
-go_to_payment, place_order, book_appointment, set_appointment, confirm_appointment,
-capture_lead, connect_human, back_to_boutique, start_over.`;
+go_to_payment, place_order, start_over.`;
 
 /**
  * Function tools the Realtime model can call to drive the boutique. Names match
  * AGENT_INSTRUCTIONS; the handlers live in components/voice/VoiceController.tsx.
- * The category enum is derived from CATEGORIES so it can never drift.
  */
 export const AGENT_TOOLS = [
   {
     type: "function",
-    name: "show_category",
-    description: "Open one of the boutique's product category worlds.",
-    parameters: {
-      type: "object",
-      properties: {
-        category: {
-          type: "string",
-          enum: CATEGORIES.map((c) => c.id),
-          description: "Which category world to open.",
-        },
-      },
-      required: ["category"],
-    },
-  },
-  {
-    type: "function",
     name: "select_product",
-    description: "Focus/select a specific piece by name (any category).",
+    description: "Bring a specific piece into focus by name.",
     parameters: {
       type: "object",
       properties: { name: { type: "string", description: "The piece name." } },
@@ -227,58 +186,6 @@ export const AGENT_TOOLS = [
     name: "place_order",
     description:
       "Place the order from the payment screen. Only call this AFTER the guest has explicitly confirmed they want to place the order.",
-    parameters: { type: "object", properties: {} },
-  },
-  {
-    type: "function",
-    name: "book_appointment",
-    description: "Open the private-appointment booking flow with its live calendar.",
-    parameters: { type: "object", properties: {} },
-  },
-  {
-    type: "function",
-    name: "set_appointment",
-    description:
-      "Fill the appointment form live. Pass any subset of reason, date (YYYY-MM-DD), time, name, email, phone, notes. Setting the date/time also advances to the details step.",
-    parameters: {
-      type: "object",
-      properties: {
-        reason: {
-          type: "string",
-          description: "What the appointment is for, exactly as the guest stated it (e.g. 'wedding ring consultation').",
-        },
-        date: { type: "string", description: "Appointment date as YYYY-MM-DD." },
-        time: { type: "string", description: `Appointment time, one of: ${APPOINTMENT_TIMES.join(", ")}.` },
-        name: { type: "string", description: "Full name." },
-        email: { type: "string", description: "Email address." },
-        phone: { type: "string", description: "Phone number." },
-        notes: { type: "string", description: "Any notes or special requests for the appointment." },
-      },
-    },
-  },
-  {
-    type: "function",
-    name: "confirm_appointment",
-    description:
-      "Confirm and book the appointment. Only call this AFTER the guest has explicitly confirmed.",
-    parameters: { type: "object", properties: {} },
-  },
-  {
-    type: "function",
-    name: "capture_lead",
-    description: "Open the demo form to capture the guest's contact details.",
-    parameters: { type: "object", properties: {} },
-  },
-  {
-    type: "function",
-    name: "connect_human",
-    description: "Open the demo human-concierge handoff.",
-    parameters: { type: "object", properties: {} },
-  },
-  {
-    type: "function",
-    name: "back_to_boutique",
-    description: "Return to the main boutique window.",
     parameters: { type: "object", properties: {} },
   },
   {

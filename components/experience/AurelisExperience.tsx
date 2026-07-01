@@ -9,8 +9,6 @@ import { useExperienceStore } from "@/lib/stores/useExperienceStore";
 import { useViewMode } from "@/lib/hooks/useViewMode";
 import CanvasStage from "@/components/three/CanvasStage";
 import BoutiqueWindowScene from "./BoutiqueWindowScene";
-import LuminousAtelierScene from "./LuminousAtelierScene";
-import SceneTransition from "./SceneTransition";
 import VoiceController from "@/components/voice/VoiceController";
 import MicButton from "@/components/voice/MicButton";
 import VoiceStatusHint from "@/components/voice/VoiceStatusHint";
@@ -20,13 +18,8 @@ import BrandOverlay from "@/components/overlays/BrandOverlay";
 import MinimalControls from "@/components/overlays/MinimalControls";
 import CartOverlay from "@/components/overlays/CartOverlay";
 import DemoCheckoutOverlay from "@/components/overlays/DemoCheckoutOverlay";
-import DemoBookingOverlay from "@/components/overlays/DemoBookingOverlay";
-import LeadCaptureOverlay from "@/components/overlays/LeadCaptureOverlay";
-import HandoffOverlay from "@/components/overlays/HandoffOverlay";
 
 export default function AurelisExperience() {
-  const scene = useExperienceStore((s) => s.scene);
-
   // Resolve the responsive view (desktop / landscape / portrait) and publish it
   // to the store so the in-canvas components read a single source of truth.
   // useLayoutEffect runs before the WebGL render loop's first frame, so the
@@ -39,9 +32,9 @@ export default function AurelisExperience() {
 
   return (
     <div className="experience-root">
-      {/* Scene-first layer */}
+      {/* Scene-first layer — the single boutique home page */}
       <CanvasStage view={view}>
-        {scene === "boutique-window" ? <BoutiqueWindowScene /> : <LuminousAtelierScene />}
+        <BoutiqueWindowScene />
       </CanvasStage>
 
       {/* Voice logic + background asset warming (render nothing) */}
@@ -55,13 +48,9 @@ export default function AurelisExperience() {
       <MinimalControls />
       <CartOverlay />
       <TextFallback />
-      <SceneTransition />
 
-      {/* Demo-safe flows (conditionally visible) */}
+      {/* Demo-safe checkout (conditionally visible) */}
       <DemoCheckoutOverlay />
-      <DemoBookingOverlay />
-      <LeadCaptureOverlay />
-      <HandoffOverlay />
     </div>
   );
 }

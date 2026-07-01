@@ -2,8 +2,8 @@
 
 // Aurelis — the AI concierge presence. A luminous, pearlescent orb (NOT a dark
 // sci-fi orb). It breathes when idle, brightens + quickens when listening, and
-// pulses while speaking. Its position/scale lerp between scene targets so it
-// grows and centers as you enter the Luminous Atelier.
+// pulses while speaking. Its position/scale lerp to the responsive scene targets
+// so it sits framed above the collection on any device.
 //
 // "Magic" is built from layered, reactive light, all in the ivory/champagne
 // palette: a Fresnel aura shell (glowing rim), two crossed orbiting rings, a

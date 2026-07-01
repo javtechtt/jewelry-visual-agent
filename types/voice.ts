@@ -1,8 +1,5 @@
 // Voice + OpenAI Realtime types.
 
-import type { CategoryId } from "./category";
-import type { DemoFlowId } from "./experience";
-
 /** Connection state for the Realtime / fallback voice pipeline. */
 export type RealtimeStatus =
   | "idle"
@@ -13,12 +10,8 @@ export type RealtimeStatus =
 
 /** Logical commands Aurelis can act on, from voice or text fallback. */
 export type CommandId =
-  | "show-category"
-  | "book-appointment"
+  | "select-product"
   | "start-checkout"
-  | "connect-human"
-  | "request-info"
-  | "back-to-boutique"
   | "start-over";
 
 /** A spoken/typed intent mapping phrases to a command. */
@@ -27,17 +20,14 @@ export interface VoiceIntent {
   /** Lowercase trigger phrases matched against recognized text. */
   phrases: string[];
   description: string;
-  /** Optional category resolved for "show <category>" style intents. */
-  category?: CategoryId;
-  /** Optional demo flow opened by this intent. */
-  demoFlow?: DemoFlowId;
+  /** Product resolved for "select <piece>" style intents. */
+  productId?: string;
 }
 
 /** Result of matching recognized text against the intent table. */
 export interface MatchedIntent {
   command: CommandId;
-  category?: CategoryId;
-  demoFlow?: DemoFlowId;
+  productId?: string;
   /** The raw recognized/typed text that produced the match. */
   transcript: string;
 }

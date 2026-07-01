@@ -1,12 +1,9 @@
-// Lightweight, frontend-only validation for the demo flows. Enough to make the
-// forms feel real; no data leaves the browser.
+// Lightweight, frontend-only validation for the checkout flow. Enough to make
+// the form feel real; no data leaves the browser.
 
 import type {
-  BookingPayload,
   CheckoutPayload,
   ContactDetails,
-  HandoffPayload,
-  LeadPayload,
   ValidationErrors,
 } from "@/types/demo";
 
@@ -35,25 +32,6 @@ export function validateCheckout(payload: Partial<CheckoutPayload>): ValidationE
   const errors = validateContact(payload);
   if (!payload.paymentMethod) errors.paymentMethod = "Choose a method.";
   if (!payload.consent) errors.consent = "Please accept the Terms of Sale.";
-  return errors;
-}
-
-export function validateBooking(payload: Partial<BookingPayload>): ValidationErrors {
-  const errors = validateContact(payload);
-  if (!payload.date) errors.date = "Please choose a date.";
-  if (!payload.time) errors.time = "Please choose a time.";
-  return errors;
-}
-
-export function validateLead(payload: Partial<LeadPayload>): ValidationErrors {
-  const errors = validateContact(payload);
-  if (!payload.consent) errors.consent = "Please acknowledge to continue.";
-  return errors;
-}
-
-export function validateHandoff(payload: Partial<HandoffPayload>): ValidationErrors {
-  const errors = validateContact(payload);
-  if (!payload.topic?.trim()) errors.topic = "What can we help with?";
   return errors;
 }
 

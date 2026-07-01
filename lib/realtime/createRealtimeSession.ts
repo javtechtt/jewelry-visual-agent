@@ -39,9 +39,7 @@ export async function createRealtimeSession(): Promise<RealtimeSessionResponse> 
         session: {
           type: "realtime",
           model: REALTIME_MODEL,
-          // Append the real current date so Aurelis can resolve "next Tuesday"
-          // etc. into concrete YYYY-MM-DD calendar dates for appointments.
-          instructions: `${AGENT_INSTRUCTIONS}\n\nToday's date is ${new Date().toISOString().slice(0, 10)}.`,
+          instructions: AGENT_INSTRUCTIONS,
           output_modalities: ["audio"],
           audio: {
             input: {
@@ -57,8 +55,8 @@ export async function createRealtimeSession(): Promise<RealtimeSessionResponse> 
               speed: 1.1,
             },
           },
-          // Function tools let Aurelis actually drive the boutique (navigate
-          // categories, open demo flows, etc.) — see config/agent.ts.
+          // Function tools let Aurelis actually drive the boutique (focus a
+          // piece, fill the bag, run checkout) — see config/agent.ts.
           tools: AGENT_TOOLS,
           tool_choice: "auto",
         },

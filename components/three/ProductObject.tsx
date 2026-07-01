@@ -11,12 +11,12 @@ import { Component, Suspense, useEffect, useMemo, useRef, type ReactNode } from 
 import { useFrame } from "@react-three/fiber";
 import { useGLTF, useTexture } from "@react-three/drei";
 import * as THREE from "three";
-import type { CategoryAccent, ProductShape } from "@/types/category";
+import type { ProductAccent, ProductShape } from "@/types/product";
 import { HOVER } from "@/config/motion";
 
 interface ProductObjectProps {
   shape: ProductShape;
-  accent: CategoryAccent;
+  accent: ProductAccent;
   hovered?: boolean;
   focused?: boolean;
   spin?: boolean;
@@ -26,7 +26,7 @@ interface ProductObjectProps {
   model?: string;
 }
 
-function materialParams(shape: ProductShape, accent: CategoryAccent) {
+function materialParams(shape: ProductShape, accent: ProductAccent) {
   switch (shape) {
     case "watch":
     case "ring":
