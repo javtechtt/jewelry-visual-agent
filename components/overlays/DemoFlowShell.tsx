@@ -6,12 +6,15 @@
 // See docs/DEMO_SAFE_RULES.md.
 
 import { AnimatePresence, motion } from "framer-motion";
-import type { ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import { DEMO_FLOWS } from "@/config/demo-flows";
 import type { DemoFlowId } from "@/types/experience";
 import type { DemoReceipt, ValidationErrors } from "@/types/demo";
 
 export type DemoStep = "form" | "review" | "processing" | "done";
+
+const FOCUSABLE =
+  'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
 
 export function DemoFlowShell({
   flowId,
@@ -28,6 +31,57 @@ export function DemoFlowShell({
   subtitle?: string;
 }) {
   const config = DEMO_FLOWS[flowId];
+  const panelRef = useRef<HTMLElement>(null);
+  const restoreRef = useRef<HTMLElement | null>(null);
+
+  // Modal behaviour: move focus into the dialog, trap Tab within it, close on
+  // Escape, and restore focus to the trigger on close.
+  useEffect(() => {
+    if (!open) return;
+    restoreRef.current = (document.activeElement as HTMLElement) ?? null;
+
+    const visibleFocusables = () =>
+      panelRef.current
+        ? Array.from(panelRef.current.querySelectorAll<HTMLElement>(FOCUSABLE)).filter(
+            (el) => !el.hasAttribute("disabled") && el.offsetParent !== null,
+          )
+        : [];
+
+    (visibleFocusables()[0] ?? panelRef.current)?.focus();
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        onClose();
+        return;
+      }
+      if (e.key !== "Tab") return;
+      const els = visibleFocusables();
+      if (els.length === 0) {
+        e.preventDefault();
+        return;
+      }
+      const first = els[0];
+      const last = els[els.length - 1];
+      const active = document.activeElement;
+      if (panelRef.current && !panelRef.current.contains(active)) {
+        e.preventDefault();
+        first.focus();
+      } else if (e.shiftKey && active === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && active === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      restoreRef.current?.focus?.();
+    };
+  }, [open, onClose]);
 
   return (
     <AnimatePresence>
@@ -41,6 +95,8 @@ export function DemoFlowShell({
           onClick={onClose}
         >
           <motion.section
+            ref={panelRef}
+            tabIndex={-1}
             className="demo-panel"
             role="dialog"
             aria-modal="true"

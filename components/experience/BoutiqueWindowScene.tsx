@@ -9,6 +9,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useFrame, type ThreeEvent } from "@react-three/fiber";
+import { useReducedMotion } from "framer-motion";
 import { Float, Html } from "@react-three/drei";
 import * as THREE from "three";
 import { CATEGORIES } from "@/config/categories";
@@ -16,7 +17,6 @@ import { useExperienceStore } from "@/lib/stores/useExperienceStore";
 import { BOUTIQUE_LAYOUT } from "@/config/scenes";
 import type { Category } from "@/types/category";
 import type { Vec3 } from "@/types/experience";
-import AgentOrb from "@/components/three/AgentOrb";
 import FloatingCategoryObject from "@/components/three/FloatingCategoryObject";
 import ProductObject from "@/components/three/ProductObject";
 
@@ -33,7 +33,6 @@ function BoutiqueArc() {
 
   return (
     <group>
-      <AgentOrb />
       {CATEGORIES.map((category, index) => {
         const t = count > 1 ? index / (count - 1) : 0.5;
         const x = (t - 0.5) * layout.spread;
@@ -71,6 +70,7 @@ function BoutiqueCarousel() {
   const drag = useRef({ startX: 0, base: 0, active: false, moved: 0 });
   const autoRef = useRef(0); // seconds since the last automatic advance
   const dirRef = useRef(1); // ping-pong direction for the auto-advance
+  const reduced = useReducedMotion();
   const [focus, setFocus] = useState(0);
 
   const release = () => {
@@ -107,8 +107,9 @@ function BoutiqueCarousel() {
       autoRef.current = 0; // never auto-advance while the guest is dragging
     } else {
       // Auto-advance through the categories, bouncing back at the ends.
+      // Suppressed entirely when the guest prefers reduced motion.
       autoRef.current += delta;
-      if (count > 1 && autoRef.current >= AUTO_INTERVAL) {
+      if (!reduced && count > 1 && autoRef.current >= AUTO_INTERVAL) {
         autoRef.current = 0;
         let next = Math.round(targetRef.current) + dirRef.current;
         if (next > count - 1) {
@@ -140,8 +141,6 @@ function BoutiqueCarousel() {
 
   return (
     <group>
-      <AgentOrb />
-
       {/* Full-view invisible surface that captures swipe + tap. */}
       <mesh position={[0, 0.4, 2]} onPointerDown={onDown} onPointerMove={onMove} onPointerUp={release}>
         <planeGeometry args={[24, 24]} />

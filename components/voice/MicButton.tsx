@@ -3,13 +3,15 @@
 // The primary, voice-first control: a premium mic orb pinned bottom-center. Its
 // glow reflects Aurelis' agent state so the interface feels voice-led.
 
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { useExperienceStore } from "@/lib/stores/useExperienceStore";
 
 export default function MicButton() {
   const micActive = useExperienceStore((s) => s.micActive);
   const agentState = useExperienceStore((s) => s.agentState);
   const toggleMic = useExperienceStore((s) => s.toggleMic);
+  const reduced = useReducedMotion();
+  const pulsing = micActive && !reduced;
 
   const label = micActive ? "Listening — tap to mute" : "Tap to speak to Aurelis";
 
@@ -22,8 +24,8 @@ export default function MicButton() {
         onClick={toggleMic}
         className={`mic-button mic-button--${agentState}${micActive ? " mic-button--on" : ""}`}
         whileTap={{ scale: 0.94 }}
-        animate={micActive ? { scale: [1, 1.05, 1] } : { scale: 1 }}
-        transition={micActive ? { duration: 1.8, repeat: Infinity, ease: "easeInOut" } : { duration: 0.3 }}
+        animate={pulsing ? { scale: [1, 1.05, 1] } : { scale: 1 }}
+        transition={pulsing ? { duration: 1.8, repeat: Infinity, ease: "easeInOut" } : { duration: 0.3 }}
       >
         <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
           <path

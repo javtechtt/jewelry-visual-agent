@@ -32,22 +32,27 @@ export default function EnvironmentStage() {
       <fog attach="fog" args={[atmosphere.bottom, 11, 26]} />
 
       {/* Reflective marble-like floor. raycast disabled so it never occludes
-          Html labels or intercepts pointer events. */}
+          Html labels or intercepts pointer events. On the tightest (portrait)
+          tier the per-frame planar reflection is dropped for a flat floor. */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.9, 0]} receiveShadow raycast={() => null}>
         <planeGeometry args={[70, 70]} />
-        <MeshReflectorMaterial
-          resolution={quality.reflectorResolution}
-          mirror={0.42}
-          mixBlur={8}
-          mixStrength={1.1}
-          blur={[420, 110]}
-          roughness={0.8}
-          depthScale={1.1}
-          minDepthThreshold={0.4}
-          maxDepthThreshold={1.25}
-          color={atmosphere.bottom}
-          metalness={0.18}
-        />
+        {quality.reflections ? (
+          <MeshReflectorMaterial
+            resolution={quality.reflectorResolution}
+            mirror={0.42}
+            mixBlur={8}
+            mixStrength={1.1}
+            blur={[420, 110]}
+            roughness={0.8}
+            depthScale={1.1}
+            minDepthThreshold={0.4}
+            maxDepthThreshold={1.25}
+            color={atmosphere.bottom}
+            metalness={0.18}
+          />
+        ) : (
+          <meshStandardMaterial color={atmosphere.bottom} roughness={0.9} metalness={0.1} />
+        )}
       </mesh>
 
       {/* Soft luminous back wall. raycast disabled (never an occluder). */}

@@ -13,7 +13,9 @@ import LuminousAtelierScene from "./LuminousAtelierScene";
 import SceneTransition from "./SceneTransition";
 import VoiceController from "@/components/voice/VoiceController";
 import MicButton from "@/components/voice/MicButton";
+import VoiceStatusHint from "@/components/voice/VoiceStatusHint";
 import TextFallback from "@/components/voice/TextFallback";
+import AssetPreloader from "./AssetPreloader";
 import BrandOverlay from "@/components/overlays/BrandOverlay";
 import MinimalControls from "@/components/overlays/MinimalControls";
 import CartOverlay from "@/components/overlays/CartOverlay";
@@ -42,12 +44,14 @@ export default function AurelisExperience() {
         {scene === "boutique-window" ? <BoutiqueWindowScene /> : <LuminousAtelierScene />}
       </CanvasStage>
 
-      {/* Voice logic (renders nothing) */}
+      {/* Voice logic + background asset warming (render nothing) */}
       <VoiceController />
+      <AssetPreloader />
 
       {/* Minimal luxury overlays */}
       <BrandOverlay />
       <MicButton />
+      <VoiceStatusHint />
       <MinimalControls />
       <CartOverlay />
       <TextFallback />

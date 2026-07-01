@@ -14,6 +14,7 @@ import type {
 } from "@/types/voice";
 import { VoiceFallback } from "./voiceFallback";
 import { speechLevel } from "./audioLevel";
+import { reportError } from "@/lib/log";
 
 interface RealtimeClientHandlers {
   onStatus?: (status: RealtimeStatus) => void;
@@ -59,7 +60,8 @@ export class RealtimeClient {
     try {
       const res = await fetch("/api/realtime-session", { method: "POST" });
       data = (await res.json()) as RealtimeSessionResponse;
-    } catch {
+    } catch (err) {
+      reportError("realtime-session-fetch", err);
       this.startFallback();
       return;
     }
@@ -68,8 +70,10 @@ export class RealtimeClient {
       try {
         await this.startLive(data.session);
         return;
-      } catch {
-        // Live path failed — degrade gracefully.
+      } catch (err) {
+        // Live path failed (mic denied, SDP, network) — degrade gracefully but
+        // don't swallow the reason.
+        reportError("realtime-live", err);
         this.startFallback();
         return;
       }
@@ -231,19 +235,25 @@ export class RealtimeClient {
       analyser.smoothingTimeConstant = 0.8;
       source.connect(analyser);
       const data = new Uint8Array(analyser.frequencyBinCount);
-      const tick = () => {
-        analyser.getByteTimeDomainData(data);
-        let sum = 0;
-        for (let i = 0; i < data.length; i += 1) {
-          const v = (data[i] - 128) / 128;
-          sum += v * v;
+      let lastTs = 0;
+      const tick = (ts: number) => {
+        // Throttle to ~30Hz — the orb lerps speechLevel anyway, so a full
+        // FFT+RMS every animation frame (60Hz) is wasted work.
+        if (ts - lastTs >= 33) {
+          lastTs = ts;
+          analyser.getByteTimeDomainData(data);
+          let sum = 0;
+          for (let i = 0; i < data.length; i += 1) {
+            const v = (data[i] - 128) / 128;
+            sum += v * v;
+          }
+          const rms = Math.sqrt(sum / data.length);
+          // Lift typical speech to a satisfying pulse, clamped to 0..1.
+          speechLevel.value = Math.min(1, rms * 3.2);
         }
-        const rms = Math.sqrt(sum / data.length);
-        // Lift typical speech to a satisfying pulse, clamped to 0..1.
-        speechLevel.value = Math.min(1, rms * 3.2);
         this.levelRAF = requestAnimationFrame(tick);
       };
-      tick();
+      this.levelRAF = requestAnimationFrame(tick);
     } catch {
       /* analyser is optional eye-candy — ignore if the browser blocks it */
     }

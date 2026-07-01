@@ -6,6 +6,7 @@
 
 import { useMemo, useRef, useState } from "react";
 import { useFrame } from "@react-three/fiber";
+import { useReducedMotion } from "framer-motion";
 import { Float, Html } from "@react-three/drei";
 import type { ThreeEvent } from "@react-three/fiber";
 import * as THREE from "three";
@@ -16,7 +17,6 @@ import { ATELIER_LAYOUT } from "@/config/scenes";
 import { HOVER } from "@/config/motion";
 import type { CategoryOption } from "@/types/category";
 import type { Vec3 } from "@/types/experience";
-import AgentOrb from "@/components/three/AgentOrb";
 import ProductDisplayPanel from "@/components/three/ProductDisplayPanel";
 import ProductObject from "@/components/three/ProductObject";
 
@@ -58,6 +58,7 @@ function AtelierOption({
   const rootRef = useRef<THREE.Group>(null);
   const labelRef = useRef<HTMLDivElement>(null);
   const worldPos = useMemo(() => new THREE.Vector3(), []);
+  const reduced = useReducedMotion();
 
   useFrame((_, delta) => {
     // Spin the case + product as one unit; grow the whole unit on hover.
@@ -65,7 +66,7 @@ function AtelierOption({
       const k = 1 - Math.pow(0.0015, delta);
       const target = active ? HOVER.scale : 1;
       spinRef.current.scale.setScalar(THREE.MathUtils.lerp(spinRef.current.scale.x, target, k));
-      spinRef.current.rotation.y += delta * (active ? 0.5 : 0.18);
+      if (!reduced) spinRef.current.rotation.y += delta * (active ? 0.5 : 0.18);
     }
     // Show the title only on the FRONT half of the orbit (nearer the camera).
     // Smoothstep over the orbit depth fades it as the case crosses the sides;
@@ -136,6 +137,7 @@ export default function LuminousAtelierScene() {
     () => (selectedProduct ? options.findIndex((o) => o.id === selectedProduct.id) : -1),
     [selectedProduct, options],
   );
+  const reduced = useReducedMotion();
 
   useFrame((_, delta) => {
     if (!ringRef.current) return;
@@ -146,15 +148,13 @@ export default function LuminousAtelierScene() {
       const cur = ringRef.current.rotation.y;
       const diff = Math.atan2(Math.sin(target - cur), Math.cos(target - cur));
       ringRef.current.rotation.y = cur + diff * (1 - Math.pow(0.0009, delta));
-    } else {
+    } else if (!reduced) {
       ringRef.current.rotation.y += delta * 0.06;
     }
   });
 
   return (
     <group>
-      <AgentOrb />
-
       <group ref={ringRef}>
         {options.map((option, index) => {
           const angle = (index / options.length) * Math.PI * 2 + Math.PI / 2;

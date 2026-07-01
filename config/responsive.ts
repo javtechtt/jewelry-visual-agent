@@ -27,17 +27,19 @@ export interface QualityPreset {
   reflectorResolution: number;
   /** ContactShadows render-target resolution. */
   contactShadowResolution: number;
+  /** Whether the floor uses the (expensive) per-frame planar reflection. */
+  reflections: boolean;
 }
 
-// Render-quality trims (the camera + composition are untouched):
-// - Reflection + contact-shadow render targets are 512 across all views. Both
-//   are heavily blurred (reflection blur [420,110]/mixBlur 8; contact shadow
-//   blur 2.8), so 512 is visually identical to 1024 while halving those passes.
-// - DPR ceiling capped at 1.5. Pixel fill is the dominant cost on hi-DPI
-//   displays; measured ~137fps @ 5.4MP vs ~74fps @ 12MP. 1.5 trims ~30% of
-//   pixels vs 1.8 for a large framerate gain at a slight sharpness cost.
+// Render-quality tiers. DESKTOP is the approved preset and is left UNTOUCHED
+// (DPR 1.5, 512 render targets, reflections on). Handheld tiers trim the
+// GPU-heavy passes so phones don't run a full reflective floor + 1.5x fill and
+// thermal-throttle:
+// - landscape (tablets / rotated phones): DPR 1.3, 256 render targets.
+// - portrait (phones, tightest budget): DPR 1.2, 256 targets, and the planar
+//   reflection is dropped for a flat floor (the single biggest per-frame cost).
 export const QUALITY: Record<ViewMode, QualityPreset> = {
-  desktop: { dpr: [1, 1.5], reflectorResolution: 512, contactShadowResolution: 512 },
-  landscape: { dpr: [1, 1.5], reflectorResolution: 512, contactShadowResolution: 512 },
-  portrait: { dpr: [1, 1.5], reflectorResolution: 512, contactShadowResolution: 512 },
+  desktop: { dpr: [1, 1.5], reflectorResolution: 512, contactShadowResolution: 512, reflections: true },
+  landscape: { dpr: [1, 1.3], reflectorResolution: 256, contactShadowResolution: 256, reflections: true },
+  portrait: { dpr: [1, 1.2], reflectorResolution: 256, contactShadowResolution: 256, reflections: false },
 };

@@ -95,6 +95,59 @@ button {
   color: var(--ink-faint);
 }
 
+/* Branded fallback for no-WebGL / context-loss / error boundaries. */
+.scene-fallback {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.85rem;
+  padding: 2rem;
+  text-align: center;
+  background: radial-gradient(circle at 50% 30%, var(--pearl), var(--sand) 75%);
+}
+.scene-fallback__brand {
+  font-family: var(--font-serif);
+  font-size: 1.7rem;
+  letter-spacing: 0.42em;
+  margin: 0;
+  padding-left: 0.42em;
+  color: var(--ink);
+}
+.scene-fallback__msg {
+  margin: 0;
+  max-width: 34ch;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+.scene-fallback .action-btn {
+  margin-top: 0.6rem;
+}
+
+/* Transient voice-unavailable hint (above the mic). */
+.voice-hint {
+  position: fixed;
+  left: 50%;
+  bottom: 8.5rem;
+  transform: translateX(-50%);
+  z-index: 33;
+  max-width: min(86vw, 360px);
+  padding: 0.55rem 1rem;
+  border-radius: 999px;
+  background: var(--glass-strong);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(14px);
+  font-size: 0.72rem;
+  letter-spacing: 0.03em;
+  color: var(--ink-soft);
+  box-shadow: var(--shadow-soft);
+  text-align: center;
+}
+
 @keyframes pulse {
   0%, 100% { transform: scale(1); opacity: 0.9; }
   50% { transform: scale(1.08); opacity: 1; }
@@ -1166,6 +1219,9 @@ button {
     width: auto;
   }
   .cart-list { max-height: 24vh; }
+
+  /* Voice hint clears the bottom action row on phones. */
+  .voice-hint { bottom: calc(11.2rem + env(safe-area-inset-bottom)); }
 
   /* Atelier category title — smaller + tighter so it doesn't span the screen. */
   .atelier-title { font-size: 1.4rem; letter-spacing: 0.2em; }
