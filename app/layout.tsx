@@ -15,10 +15,30 @@ const cormorant = Cormorant_Garamond({
   display: "swap",
 });
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://aurelis.example.com";
+const DESCRIPTION =
+  "A cinematic, voice-first AI luxury boutique. Explore watches, jewelry, bags, fragrances and accessories, guided by the Aurelis concierge.";
+
 export const metadata: Metadata = {
-  title: "Aurelis · AI Boutique",
-  description:
-    "A cinematic, voice-controlled AI luxury boutique. Explore watches, jewelry, bags, fragrances and more, guided by the Aurelis concierge.",
+  metadataBase: new URL(SITE_URL),
+  title: { default: "Aurelis · AI Luxury Boutique", template: "%s · Aurelis" },
+  description: DESCRIPTION,
+  applicationName: "Aurelis",
+  keywords: ["luxury boutique", "AI concierge", "voice shopping", "watches", "jewelry", "bags", "fragrances", "3D boutique"],
+  alternates: { canonical: "/" },
+  openGraph: {
+    type: "website",
+    siteName: "Aurelis",
+    title: "Aurelis · AI Luxury Boutique",
+    description: DESCRIPTION,
+    url: SITE_URL,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Aurelis · AI Luxury Boutique",
+    description: DESCRIPTION,
+  },
+  robots: { index: true, follow: true },
 };
 
 export const viewport: Viewport = {
@@ -41,7 +61,20 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${cormorant.variable} antialiased`}
     >
-      <body>{children}</body>
+      <body>
+        {/* No-JS / crawler fallback (the experience itself is client-only WebGL). */}
+        <noscript>
+          <div className="scene-fallback">
+            <h1 className="scene-fallback__brand">AURELIS</h1>
+            <p className="scene-fallback__msg">
+              Aurelis is a voice-first 3D luxury boutique — watches, jewelry, bags,
+              fragrances and accessories, guided by an AI concierge. Please enable
+              JavaScript to explore the experience.
+            </p>
+          </div>
+        </noscript>
+        {children}
+      </body>
     </html>
   );
 }
