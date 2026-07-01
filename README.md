@@ -10,8 +10,9 @@ Not a chatbot, not an ecommerce grid, not a card layout.
 ## Stack
 
 Next.js 16 · React 19 · TypeScript · React Three Fiber · Three.js ·
-@react-three/drei · @react-three/postprocessing · GSAP · Framer Motion ·
+@react-three/drei · @react-three/postprocessing · Framer Motion ·
 Zustand · Tailwind CSS · OpenAI Realtime-ready (`gpt-realtime-2`).
+Tooling: Vitest (unit) · ESLint (flat config) · GitHub Actions CI.
 
 ## Quick start
 
@@ -25,20 +26,23 @@ The app runs with **no configuration**. Without an `OPENAI_API_KEY` it uses a
 graceful browser-speech / text fallback for voice. See
 [`docs/OPENAI_REALTIME_SETUP.md`](docs/OPENAI_REALTIME_SETUP.md).
 
-Scripts: `npm run dev` · `npm run build` · `npm run start`.
+Scripts: `npm run dev` · `npm run build` · `npm run start` · `npm run lint` ·
+`npm run test` · `npm run typecheck`.
 
 ## What you'll see
 
-- **Screen 1 — Boutique Window:** seven categories (Watches, Jewelry, Bags,
-  Fragrances, Accessories, Gifts, Services) float as glass-panelled displays in
-  a 100vh no-scroll scene, with the Aurelis orb present.
-- **Screen 2 — Luminous Atelier:** click a category (or say "show watches") and
-  the camera dollies in; the orb grows central and product options orbit it with
-  hover-bloom interactions.
-- **Voice-first controls:** mic (bottom-center), short captions, a hidden text
-  fallback, a category rail, and demo action buttons.
-- **Demo-safe flows:** Checkout, Booking, Lead capture, and Concierge handoff —
-  real-feeling, zero real backend actions.
+- **Screen 1 — Boutique Window:** five categories (Watches, Jewelry, Bags,
+  Fragrances, Accessories) presented in a 100vh no-scroll scene — a horizontal
+  arc on desktop/tablet, and a swipeable single-hero carousel on phones — with
+  the Aurelis orb present.
+- **Screen 2 — Luminous Atelier:** tap a category (or say "show watches") and the
+  camera dollies in; the orb sits central and the product options orbit it with
+  hover/tap-to-focus interactions.
+- **Voice-first controls:** mic (bottom-center), a hidden text fallback, a
+  category rail, and demo action buttons. Live voice uses OpenAI Realtime; with
+  no key it degrades to browser speech / text.
+- **Demo-safe flows:** Checkout, Booking (live calendar), Stay-in-Touch, and
+  Concierge handoff — real-feeling, with no real backend actions.
 
 ## Project structure
 

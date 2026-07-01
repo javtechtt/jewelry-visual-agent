@@ -53,7 +53,6 @@ export const SCENES: Record<SceneId, SceneDef> = {
 export const PARALLAX = {
   maxYaw: 0.06,
   maxPitch: 0.035,
-  damping: 2.2,
 };
 
 // ============================================================================
@@ -81,8 +80,8 @@ const SCENE_VIEWS: Record<SceneId, Record<ViewMode, SceneView>> = {
     // Landscape tablet / small landscape screens: pull back + a touch more FOV
     // so the (slightly tighter) horizontal arc clears narrower aspect ratios.
     landscape: {
-      camera: { position: [0, 0.6, 9.8], target: [0, 0.32, 0], fov: 46 },
-      orb: { position: [0, 1.95, -1.4], scale: 0.58 },
+      camera: { position: [0, 0.5, 10.4], target: [0, 0.28, 0], fov: 50 },
+      orb: { position: [0, 1.95, -1.7], scale: 0.5 },
     },
     // Portrait phones / portrait tablets: the categories restack into a gentle
     // vertical S-curve (see BoutiqueWindowScene), so the camera frames height.
@@ -115,17 +114,11 @@ export function getSceneOrb(scene: SceneId, view: ViewMode): SceneView["orb"] {
   return SCENE_VIEWS[scene][view].orb;
 }
 
-/** Boutique Window object arrangement, per view. Desktop reproduces the
- *  original horizontal arc exactly (SPREAD 9.6, full-scale objects). */
+/** Boutique Window arc arrangement (desktop/landscape; portrait uses the
+ *  swipe carousel in BoutiqueWindowScene, not these values). */
 export interface BoutiqueLayout {
-  /** Portrait stacks vertically; landscape/desktop keep the horizontal arc. */
-  vertical: boolean;
-  /** Total horizontal width of the arc (horizontal modes). */
+  /** Total horizontal width of the arc. */
   spread: number;
-  /** Total vertical extent of the column (portrait mode). */
-  vSpread: number;
-  /** Lateral S-curve amplitude in portrait. */
-  zig: number;
   /** Visual product scale multiplier. */
   objectScale: number;
   /** Tap-target (hit plane) scale multiplier — kept generous on touch. */
@@ -137,11 +130,11 @@ export interface BoutiqueLayout {
 }
 
 export const BOUTIQUE_LAYOUT: Record<ViewMode, BoutiqueLayout> = {
-  desktop: { vertical: false, spread: 9.6, vSpread: 0, zig: 0, objectScale: 1, hitScale: 1, labelY: -0.95, labelDistance: 8 },
-  landscape: { vertical: false, spread: 7.2, vSpread: 0, zig: 0, objectScale: 0.92, hitScale: 1.05, labelY: -0.92, labelDistance: 8 },
-  // Portrait: a calm, centred vertical column of all five categories, with small
-  // crisp labels, sized to sit between the top chips and the bottom controls.
-  portrait: { vertical: true, spread: 0, vSpread: 3.6, zig: 0, objectScale: 0.5, hitScale: 1.3, labelY: -0.5, labelDistance: 3.6 },
+  desktop: { spread: 9.6, objectScale: 1, hitScale: 1, labelY: -0.95, labelDistance: 8 },
+  landscape: { spread: 9.6, objectScale: 0.7, hitScale: 1.05, labelY: -0.74, labelDistance: 4.6 },
+  // Portrait isn't an arc — BoutiqueWindowScene routes it to the swipe carousel,
+  // so these values are unused there (kept only to satisfy the per-view record).
+  portrait: { spread: 0, objectScale: 0.5, hitScale: 1.3, labelY: -0.5, labelDistance: 3.6 },
 };
 
 /** Luminous Atelier ring layout, per view. Desktop reproduces the original

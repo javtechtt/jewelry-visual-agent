@@ -67,8 +67,6 @@ export interface ExperienceState {
   // --- core scene state ---
   scene: SceneId;
   activeCategory: CategoryId | null;
-  hoveredCategory: CategoryId | null;
-  focusedOptionId: string | null;
 
   // --- responsive view mode (drives the 3D scene presets only) ---
   view: ViewMode;
@@ -102,8 +100,6 @@ export interface ExperienceState {
   // --- primitive setters ---
   setScene: (scene: SceneId) => void;
   setView: (view: ViewMode) => void;
-  setHoveredCategory: (id: CategoryId | null) => void;
-  setFocusedOption: (id: string | null) => void;
   setAgentState: (state: AgentState) => void;
   setRealtimeStatus: (status: RealtimeStatus) => void;
   setMicActive: (active: boolean) => void;
@@ -148,8 +144,6 @@ const INITIAL = {
   scene: "boutique-window" as SceneId,
   view: "desktop" as ViewMode,
   activeCategory: null as CategoryId | null,
-  hoveredCategory: null as CategoryId | null,
-  focusedOptionId: null as string | null,
   agentState: "idle" as AgentState,
   realtimeStatus: "idle" as RealtimeStatus,
   micActive: false,
@@ -173,8 +167,6 @@ export const useExperienceStore = create<ExperienceState>((set, get) => ({
 
   setScene: (scene) => set({ scene }),
   setView: (view) => set({ view }),
-  setHoveredCategory: (hoveredCategory) => set({ hoveredCategory }),
-  setFocusedOption: (focusedOptionId) => set({ focusedOptionId }),
   setAgentState: (agentState) => set({ agentState }),
   setRealtimeStatus: (realtimeStatus) => set({ realtimeStatus }),
   setMicActive: (micActive) =>
@@ -201,14 +193,13 @@ export const useExperienceStore = create<ExperienceState>((set, get) => ({
     set({
       scene: "luminous-atelier",
       activeCategory: id,
-      focusedOptionId: null,
       agentState: "thinking",
     });
     get().speak(AGENT.lines.enterCategory(category.label));
   },
 
   selectProduct: (product) => {
-    set({ selectedProduct: product, focusedOptionId: product.id });
+    set({ selectedProduct: product });
     get().speak(AGENT.lines.selectProduct(product.name));
   },
 
@@ -334,7 +325,6 @@ export const useExperienceStore = create<ExperienceState>((set, get) => ({
       scene: "boutique-window",
       activeCategory: null,
       selectedProduct: null,
-      focusedOptionId: null,
       demoFlow: null,
       agentState: "speaking",
     });

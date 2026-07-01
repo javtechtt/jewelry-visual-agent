@@ -14,8 +14,12 @@ export default function MinimalControls() {
   const enterCategory = useExperienceStore((s) => s.enterCategory);
   const backToBoutique = useExperienceStore((s) => s.backToBoutique);
   const openDemoFlow = useExperienceStore((s) => s.openDemoFlow);
+  const cart = useExperienceStore((s) => s.cart);
+  const selectedProduct = useExperienceStore((s) => s.selectedProduct);
 
   const inAtelier = scene === "luminous-atelier";
+  // Checkout needs something to buy — guard the empty-bag, nothing-selected case.
+  const canCheckout = cart.length > 0 || selectedProduct !== null;
 
   return (
     <>
@@ -54,11 +58,16 @@ export default function MinimalControls() {
         <button type="button" className="action-btn" onClick={() => openDemoFlow("booking")}>
           Book
         </button>
-        <button type="button" className="action-btn" onClick={() => openDemoFlow("checkout")}>
+        <button
+          type="button"
+          className="action-btn"
+          onClick={() => openDemoFlow("checkout")}
+          disabled={!canCheckout}
+        >
           Checkout
         </button>
         <button type="button" className="action-btn" onClick={() => openDemoFlow("lead")}>
-          Details
+          Stay in Touch
         </button>
         <button type="button" className="action-btn action-btn--accent" onClick={() => openDemoFlow("handoff")}>
           Concierge

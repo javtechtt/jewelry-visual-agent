@@ -84,12 +84,15 @@ it never fabricates state.**
 ### 3D scene
 - `components/three/CanvasStage.tsx` — `<Canvas shadows dpr={QUALITY[view].dpr}
   gl={{antialias:false, powerPreference:"high-performance"}}>`; mounts
-  SceneCamera, LightRig, EnvironmentStage, CursorFloorGlow, the scene, then
-  PostProcessing + AdaptiveDpr (the latter is **inert** — R3F never calls
-  `regress()`).
-- `BoutiqueWindowScene` → `FloatingCategoryObject` (per category): GLB model via
-  `ProductObject`, an invisible hit-plane, a label. (Glass panes were removed
-  here.)
+  SceneCamera, LightRig, then the **persistent room + orb** (EnvironmentStage,
+  CursorFloorGlow, AgentOrb) in their **own Suspense**, the scene in a **separate
+  Suspense**, PostProcessing, a FrameloopManager (pauses render on tab-hidden),
+  and a ContextLossGuard. Splitting the Suspense keeps the room from blacking out
+  during a scene change (the old "blink"); `AssetPreloader` warms assets on idle.
+- `BoutiqueWindowScene` — **desktop/landscape**: `FloatingCategoryObject` per
+  category in a horizontal arc. **Portrait (phones)**: a swipeable single-hero
+  carousel (auto-advances unless reduced-motion). The orb is rendered by
+  CanvasStage, not the scene.
 - `LuminousAtelierScene` → `AtelierOption` (per product option): glass case
   (`ProductDisplayPanel`) + `ProductObject` (cutout image) **spin together as one
   turntable**; hover scales the whole case; the **label fades by orbit position
@@ -147,17 +150,18 @@ it never fabricates state.**
   `antialias:false` (SMAA does AA); removed unused Geist Mono font + `gsap` dep.
 
 ## 5. Known TODOs / not done
-- **Voice-fill of the checkout form** (`set_checkout_field` / `place_order`
-  tools) — currently the guest types the fields; the agent guides verbally.
-- **Booking / lead / handoff** UIs still say "demo" (only checkout was made
-  real).
-- **`apple-watche.glb`** is committed + compressed but **not wired** (the
-  `watches` category still points at `watches.glb`).
-- **Real checkout backend** — `TODO(production)` in `lib/demo/demoActions.ts`.
-- The **Atelier glass cases are kept** (only the Boutique Window panes were
-  removed).
-- Bigger perf wins remaining all have **visual trade-offs** (lower DPR, freeze
-  reflection/contact-shadow, trim orb layers/lights) — intentionally not done.
+- **Voice-fill is DONE** — the agent fills checkout (`set_checkout_details`,
+  `set_payment_method`, `set_payment_details`, `go_to_payment`, `place_order`)
+  and booking (`set_appointment`, `confirm_appointment`) live; handlers in
+  `components/voice/VoiceController.tsx`, tools in `config/agent.ts`.
+- **Real backends** are still no-ops — `TODO(production)` in
+  `lib/demo/demoActions.ts` (payment / CRM / calendar / handoff / email).
+- **Observability** — `lib/log.ts#reportError` console-logs only; wire Sentry
+  for production.
+- **`bags.glb` (4.5MB)** is the heavy asset (mostly geometry); a real reduction
+  needs a source re-export, not lossy GLB decimation.
+- **Tests** cover the pure logic (`lib/*`) via Vitest; no e2e/Playwright yet.
+- **CI** runs typecheck → lint → test → build (`.github/workflows/ci.yml`).
 
 ## 6. Working style notes
 - Verify changes (typecheck + dev compile + targeted headless probe) rather than

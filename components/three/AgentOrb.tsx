@@ -81,6 +81,7 @@ export default function AgentOrb() {
 
   const targetPos = useMemo(() => new THREE.Vector3(), []);
   const colorTarget = useMemo(() => new THREE.Color(), []);
+  const glowTarget = useMemo(() => new THREE.Color(), []);
   const orbNdc = useMemo(() => new THREE.Vector3(), []);
   // Smoothed 0..1 cursor-proximity flare.
   const flareRef = useRef(0);
@@ -153,12 +154,14 @@ export default function AgentOrb() {
             ? 1.8
             : 0.9) +
       flare * 1.4;
-    const baseEmissive = agentState === "idle" ? 1.9 : 2.9;
+    const baseEmissive = agentState === "idle" ? 1.5 : 2.9;
+    // Peaks are capped so the additive aura/emissive don't clip the core to pure
+    // white during speech/hover (which flattened the pearlescent gradient).
     const pulse =
       baseEmissive +
       Math.sin(t * speed) * (agentState === "speaking" ? 1.1 : 0.5) +
-      flare * 1.1 +
-      voice * 2.4;
+      flare * 1.0 +
+      voice * 1.4;
 
     const stateColor =
       agentState === "listening"
@@ -166,6 +169,16 @@ export default function AgentOrb() {
         : agentState === "speaking"
           ? AGENT.visual.speakingColor
           : AGENT.visual.coreColor;
+    // The GLOW (emissive + inner aura + inner halo) ALSO takes the state colour so
+    // listening reads clearly emerald and speaking clearly sapphire — not just a
+    // faint body tint under a dominant gold glow. Idle keeps the gold glow.
+    const glowStateColor =
+      agentState === "listening"
+        ? AGENT.visual.listeningColor
+        : agentState === "speaking"
+          ? AGENT.visual.speakingColor
+          : AGENT.visual.glowColor;
+    glowTarget.set(glowStateColor);
 
     if (matRef.current) {
       matRef.current.emissiveIntensity = pulse;
@@ -174,21 +187,23 @@ export default function AgentOrb() {
       matRef.current.speed = speed;
       colorTarget.set(stateColor);
       matRef.current.color.lerp(colorTarget, k);
+      matRef.current.emissive.lerp(glowTarget, k);
     }
 
     // Fresnel aura: brightens + breathes with state, flares with proximity, and
     // tints its outer edge toward the active state colour for a living rim.
     const auraBase =
-      agentState === "speaking" ? 4.2 : agentState === "listening" ? 3.3 : 2.6;
+      agentState === "speaking" ? 3.2 : agentState === "listening" ? 2.8 : 1.9;
     auraMaterial.uniforms.uIntensity.value =
       auraBase +
       Math.sin(t * speed) * (agentState === "idle" ? 0.2 : 0.45) +
-      flare * 2.0 +
-      voice * 2.6;
+      flare * 1.2 +
+      voice * 1.4;
     // Lower power = wider, softer glow as the cursor approaches.
     auraMaterial.uniforms.uPower.value = 2.6 - flare * 0.8;
     colorTarget.set(stateColor);
     auraMaterial.uniforms.uColorOuter.value.lerp(colorTarget, k * 0.6);
+    auraMaterial.uniforms.uColorInner.value.lerp(glowTarget, k * 0.6);
 
     // Two soft halos breathing slightly out of phase = a deeper, living aura.
     if (haloInnerRef.current) {
@@ -196,6 +211,7 @@ export default function AgentOrb() {
       haloInnerRef.current.scale.setScalar(s);
       const m = haloInnerRef.current.material as THREE.MeshBasicMaterial;
       m.opacity = 0.18 + Math.abs(Math.sin(t * speed)) * 0.1 + flare * 0.12;
+      m.color.lerp(glowTarget, k);
     }
     if (haloOuterRef.current) {
       const s = 1 + Math.sin(t * speed * 0.6 + 1.2) * 0.06 + flare * 0.08;
@@ -325,7 +341,7 @@ export default function AgentOrb() {
           <mesh ref={ring2Ref} rotation={[-1.0, 0.6, 0]} raycast={() => null}>
             <torusGeometry args={[1.08, 0.01, 16, 120]} />
             <meshBasicMaterial
-              color={AGENT.visual.listeningColor}
+              color={AGENT.visual.coreColor}
               transparent
               opacity={RING2_OPACITY}
               blending={THREE.AdditiveBlending}

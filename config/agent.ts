@@ -13,10 +13,13 @@ export const AGENT = {
   voice: "coral",
   /** Visual identity for the orb (light premium, not a dark sci-fi orb). */
   visual: {
-    coreColor: "#fff7e8",
-    glowColor: "#f6e4bb",
-    listeningColor: "#dbeaf4",
-    speakingColor: "#f7e6c8",
+    // Champagne-gold concierge orb (on-palette; saturated enough that the
+    // additive glow reads as luminous gold rather than clipping to white).
+    coreColor: "#f3d99e",
+    glowColor: "#dcab55",
+    // Gemstone state cues: emerald when listening, sapphire blue when speaking.
+    listeningColor: "#2faa72",
+    speakingColor: "#3a78d4",
   },
   /** Short, minimal captions Aurelis "speaks" as it guides the experience. */
   lines: {

@@ -37,18 +37,15 @@ export default function FloatingCategoryObject({
 }: FloatingCategoryObjectProps) {
   const [hovered, setHovered] = useState(false);
   const enterCategory = useExperienceStore((s) => s.enterCategory);
-  const setHoveredCategory = useExperienceStore((s) => s.setHoveredCategory);
 
   const onOver = (e: ThreeEvent<PointerEvent>) => {
     e.stopPropagation();
     setHovered(true);
-    setHoveredCategory(category.id);
     if (typeof document !== "undefined") document.body.style.cursor = "pointer";
   };
   const onOut = (e: ThreeEvent<PointerEvent>) => {
     e.stopPropagation();
     setHovered(false);
-    setHoveredCategory(null);
     if (typeof document !== "undefined") document.body.style.cursor = "auto";
   };
   const onClick = (e: ThreeEvent<MouseEvent>) => {

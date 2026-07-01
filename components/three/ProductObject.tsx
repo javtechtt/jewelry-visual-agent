@@ -180,7 +180,7 @@ function CutoutPlane({ src }: { src: string }) {
   return (
     <group>
       <mesh geometry={CUTOUT_GEOMETRY} position={[0, 0, CUTOUT_FACE_OFFSET]} dispose={null} raycast={() => null}>
-        <meshBasicMaterial map={texture} transparent toneMapped={false} side={THREE.FrontSide} />
+        <meshBasicMaterial map={texture} transparent side={THREE.FrontSide} />
       </mesh>
       <mesh
         geometry={CUTOUT_GEOMETRY}
@@ -189,7 +189,7 @@ function CutoutPlane({ src }: { src: string }) {
         dispose={null}
         raycast={() => null}
       >
-        <meshBasicMaterial map={texture} transparent toneMapped={false} side={THREE.FrontSide} />
+        <meshBasicMaterial map={texture} transparent side={THREE.FrontSide} />
       </mesh>
     </group>
   );
