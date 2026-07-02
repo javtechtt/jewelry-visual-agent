@@ -51,10 +51,9 @@ export async function createRealtimeSession(): Promise<RealtimeSessionResponse> 
             },
             output: {
               voice: AGENT.voice,
-              // Natural pace (1.0). Going below 1.0 time-stretches the generated
-              // audio, which adds a faint metallic buzz — the sultry tone comes
-              // from the voice + persona, not from slowing it down.
-              speed: 1.0,
+              // A touch above natural (1.08) — the guest found 1.0 still slow.
+              // Staying >= 1.0 avoids the time-stretch buzz that < 1.0 introduced.
+              speed: 1.08,
             },
           },
           // Function tools let Aurelis actually drive the boutique (focus a
