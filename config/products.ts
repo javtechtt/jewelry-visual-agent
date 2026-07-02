@@ -27,6 +27,8 @@ export const PRODUCTS: Product[] = [
     shape: "watch",
     cutout: img("1523275335684-37898b6baf30"),
     model: "/models/products/watches.glb",
+    heroRotation: [0.16, -0.42, 0],
+    modelScale: 0.92,
   },
   {
     id: "aurelis-connect",
@@ -37,6 +39,8 @@ export const PRODUCTS: Product[] = [
     shape: "watch",
     cutout: img("1547996160-81dfa63595aa"),
     model: "/models/products/apple-watche.glb",
+    heroRotation: [0.16, -0.5, 0],
+    modelScale: 0.96,
   },
   {
     id: "cascade-necklace",
@@ -47,6 +51,11 @@ export const PRODUCTS: Product[] = [
     shape: "ring",
     cutout: img("1605100804763-247f67b3557e"),
     model: "/models/products/jewelry.glb",
+    // Stand the (flat) loop up to face the camera, and hold it still so a sway
+    // never foreshortens it into a strip.
+    heroRotation: [1.5708, 0, 0],
+    modelScale: 1.2,
+    animate: false,
   },
   {
     id: "atelier-top-handle",
@@ -57,6 +66,8 @@ export const PRODUCTS: Product[] = [
     shape: "bag",
     cutout: img("1584917865442-de89df76afd3"),
     model: "/models/products/bags.glb",
+    heroRotation: [0, -0.28, 0],
+    modelScale: 0.94,
   },
   {
     id: "pearl-oud",
@@ -67,6 +78,8 @@ export const PRODUCTS: Product[] = [
     shape: "bottle",
     cutout: img("1541643600914-78b084683601"),
     model: "/models/products/fragrances.glb",
+    heroRotation: [0, -0.18, 0],
+    modelScale: 1.0,
   },
   {
     id: "sculpted-sunglasses",
@@ -77,6 +90,9 @@ export const PRODUCTS: Product[] = [
     shape: "accessory",
     cutout: img("1572635196237-14b3f281503f"),
     model: "/models/products/accessories.glb",
+    heroRotation: [0.08, 1.5708, 0],
+    modelScale: 1.0,
+    animate: false,
   },
 ];
 

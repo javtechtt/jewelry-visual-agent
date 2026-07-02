@@ -202,6 +202,9 @@ function CarouselCard({ product, x }: { product: Product; x: number }) {
             accent={product.accent}
             cutout={product.cutout}
             model={product.model}
+            heroRotation={product.heroRotation}
+            modelScale={product.modelScale}
+            spin={product.animate ?? true}
           />
         </group>
       </Float>

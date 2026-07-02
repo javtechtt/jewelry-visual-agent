@@ -76,6 +76,9 @@ export default function FloatingProductObject({
               focused={selected || highlighted}
               cutout={product.cutout}
               model={product.model}
+              heroRotation={product.heroRotation}
+              modelScale={product.modelScale}
+              spin={product.animate ?? true}
             />
           </group>
           {/* Only the hovered / selected piece shows its name, so long product

@@ -24,7 +24,16 @@ interface ProductObjectProps {
   hoverScale?: boolean;
   cutout?: string;
   model?: string;
+  /** Base orientation so the piece rests at its beauty angle (see config/products). */
+  heroRotation?: [number, number, number];
+  /** Persistent size multiplier to normalise apparent size across pieces. */
+  modelScale?: number;
 }
+
+// A gentle sway around the hero angle — a poised presentation with subtle life,
+// never a full turntable (which catches flat pieces edge-on).
+const SWAY_AMP = 0.26;
+const SWAY_SPEED = 0.45;
 
 function materialParams(shape: ProductShape, accent: ProductAccent) {
   switch (shape) {
@@ -241,8 +250,12 @@ export default function ProductObject({
   hoverScale = true,
   cutout,
   model,
+  heroRotation = [0, 0, 0],
+  modelScale = 1,
 }: ProductObjectProps) {
   const groupRef = useRef<THREE.Group>(null);
+  // Per-instance phase so the pieces don't sway in unison (client-only canvas).
+  const phase = useMemo(() => Math.random() * Math.PI * 2, []);
 
   const material = useMemo(() => {
     const params = materialParams(shape, accent);
@@ -261,7 +274,7 @@ export default function ProductObject({
 
   const active = hovered || focused;
 
-  useFrame((_, delta) => {
+  useFrame((state, delta) => {
     const k = 1 - Math.pow(0.0015, delta);
     if (groupRef.current) {
       if (hoverScale) {
@@ -269,7 +282,12 @@ export default function ProductObject({
         const next = THREE.MathUtils.lerp(groupRef.current.scale.x, targetScale, k);
         groupRef.current.scale.setScalar(next);
       }
-      if (spin) groupRef.current.rotation.y += delta * (active ? 0.5 : 0.18);
+      if (spin) {
+        // Gentle sway rather than a full 360° turntable. The hero angle lives on
+        // the inner model group; this just adds subtle life on top.
+        const t = state.clock.elapsedTime;
+        groupRef.current.rotation.y = Math.sin(t * SWAY_SPEED + phase) * SWAY_AMP;
+      }
     }
     const targetEmissive = active ? 0.12 * HOVER.emissiveBoost : 0.12;
     material.emissiveIntensity = THREE.MathUtils.lerp(
@@ -290,11 +308,14 @@ export default function ProductObject({
 
   let content: ReactNode;
   if (model) {
-    // Prefer the GLB; fall back to the showcase image (then placeholder).
+    // heroRotation wraps ONLY the model, so a fallback image (during load or on
+    // model error) stays front-facing instead of edge-on for rotated pieces.
     content = (
       <ModelErrorBoundary fallback={imageOrShape}>
         <Suspense fallback={placeholder}>
-          <ModelObject src={model} />
+          <group rotation={[heroRotation[0], heroRotation[1], heroRotation[2]]}>
+            <ModelObject src={model} />
+          </group>
         </Suspense>
       </ModelErrorBoundary>
     );
@@ -302,5 +323,9 @@ export default function ProductObject({
     content = imageOrShape;
   }
 
-  return <group ref={groupRef}>{content}</group>;
+  return (
+    <group ref={groupRef}>
+      <group scale={modelScale}>{content}</group>
+    </group>
+  );
 }

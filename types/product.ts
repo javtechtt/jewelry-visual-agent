@@ -39,4 +39,13 @@ export interface Product {
   cutout?: string;
   /** Optional GLB/GLTF model path under /public/models. */
   model?: string;
+  /** Base orientation (radians, [x,y,z]) so the piece presents its beauty angle
+   *  at rest. The scene sways gently around this, never past a flattering view. */
+  heroRotation?: [number, number, number];
+  /** Visual size multiplier on top of the auto-fit, to normalise apparent size
+   *  across pieces (a thin necklace vs. a chunky bag both read balanced). */
+  modelScale?: number;
+  /** Whether the piece sways. Default true; set false for flat pieces (necklace,
+   *  glasses) so a sway never foreshortens them toward an edge-on sliver. */
+  animate?: boolean;
 }
