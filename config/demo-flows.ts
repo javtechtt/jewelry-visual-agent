@@ -26,7 +26,7 @@ export const DEMO_FLOWS: Record<DemoFlowId, DemoFlowConfig> = {
 };
 
 /** Payment choices. The "card" option shows card fields that are local-only and
- *  never transmitted (see DemoCheckoutOverlay) — no real card is ever captured. */
+ *  never transmitted (see CheckoutFlow) — no real card is ever captured. */
 export const PAYMENT_METHODS = [
   { id: "card", label: "Card" },
   { id: "boutique", label: "Pay in Boutique" },

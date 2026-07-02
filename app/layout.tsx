@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Cormorant_Garamond, Geist } from "next/font/google";
 import "./globals.css";
+import GlobalChrome from "@/components/GlobalChrome";
 
 const geistSans = Geist({
   variable: "--font-sans",
@@ -74,6 +75,8 @@ export default function RootLayout({
           </div>
         </noscript>
         {children}
+        {/* Persists across routes: voice agent, mic, brand, checkout navigator. */}
+        <GlobalChrome />
       </body>
     </html>
   );

@@ -1,6 +1,6 @@
 // Pure display formatters for the payment-screen card fields. These run both on
 // user typing and on agent fill so the value looks the same either way. The card
-// data is never transmitted (see DemoCheckoutOverlay / store) — formatting is
+// data is never transmitted (see CheckoutFlow / store) — formatting is
 // purely cosmetic.
 
 export function formatCardNumber(value: string): string {

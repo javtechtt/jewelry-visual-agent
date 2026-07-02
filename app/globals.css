@@ -905,6 +905,61 @@ button {
 }
 .demo-confirm__done { margin-top: 0.9rem; }
 
+/* --- checkout PAGE (its own route /checkout, not a modal) --- */
+.checkout-page {
+  min-height: 100svh;
+  width: 100%;
+  overflow-y: auto;
+  background: radial-gradient(125% 85% at 50% -12%, #fffaf2 0%, #f6efe2 52%, #ede3d3 100%);
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  /* generous bottom padding so long content clears the fixed mic dock */
+  padding: clamp(1.5rem, 6vh, 4rem) 1.25rem 6rem;
+}
+.checkout-page--booting {
+  align-items: center;
+  justify-content: center;
+}
+.checkout-page__inner {
+  width: min(560px, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 1.4rem;
+}
+.checkout-page__top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  /* clear the fixed brand mark pinned top-left */
+  margin-top: 2.6rem;
+}
+.checkout-page__eyebrow {
+  font-size: 0.6rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--champagne);
+}
+.checkout-page__subtitle {
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 4vw, 1.9rem);
+  line-height: 1.12;
+  color: var(--ink);
+  margin-top: 0.35rem;
+}
+.checkout-page__panel {
+  background: rgba(255, 255, 255, 0.62);
+  border: 1px solid var(--hairline);
+  border-radius: 22px;
+  padding: clamp(1.2rem, 3vw, 1.8rem);
+  backdrop-filter: blur(14px);
+  box-shadow: 0 34px 90px -46px rgba(60, 45, 20, 0.5);
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
 /* --- multi-screen checkout (details → payment → confirmation) --- */
 .checkout-steps {
   list-style: none;
