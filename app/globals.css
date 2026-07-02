@@ -907,15 +907,37 @@ button {
 
 /* --- checkout PAGE (its own route /checkout, not a modal) --- */
 .checkout-page {
+  position: relative;
+  isolation: isolate;
   min-height: 100svh;
   width: 100%;
   overflow-y: auto;
-  background: radial-gradient(125% 85% at 50% -12%, #fffaf2 0%, #f6efe2 52%, #ede3d3 100%);
+  background: #f3ecdf; /* ivory fallback beneath the tinted image */
   display: flex;
   justify-content: center;
   align-items: flex-start;
   /* generous bottom padding so long content clears the fixed mic dock */
   padding: clamp(1.5rem, 6vh, 4rem) 1.25rem 6rem;
+}
+/* Soft-focus, champagne-tinted luxury backdrop behind the glass panel. Fixed to
+   the viewport so it stays put as the flow scrolls. */
+.checkout-page::before {
+  content: "";
+  position: fixed;
+  inset: -14px;
+  z-index: -1;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(250, 244, 233, 0.66) 0%,
+      rgba(240, 229, 210, 0.74) 50%,
+      rgba(226, 214, 193, 0.82) 100%
+    ),
+    url("https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=1600&q=70&auto=format&fit=crop")
+      center / cover no-repeat;
+  filter: blur(9px) saturate(0.92) brightness(1.04);
+  transform: scale(1.06);
+  pointer-events: none;
 }
 .checkout-page--booting {
   align-items: center;
