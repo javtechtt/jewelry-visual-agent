@@ -40,6 +40,8 @@ export default function FloatingProductObject({
   const selectProduct = useExperienceStore((s) => s.selectProduct);
   const selectedId = useExperienceStore((s) => s.selectedProduct?.id);
   const selected = selectedId === product.id;
+  // Glows briefly when Aurelis names this piece aloud while suggesting.
+  const highlighted = useExperienceStore((s) => s.highlightedProductId === product.id);
 
   const onOver = (e: ThreeEvent<PointerEvent>) => {
     e.stopPropagation();
@@ -71,7 +73,7 @@ export default function FloatingProductObject({
               shape={product.shape}
               accent={product.accent}
               hovered={hovered}
-              focused={selected}
+              focused={selected || highlighted}
               cutout={product.cutout}
               model={product.model}
             />
@@ -80,7 +82,7 @@ export default function FloatingProductObject({
               names on the arc can never overlap their neighbours at any viewport
               width. At rest the arc stays clean; the pieces are distinct enough
               to read on their own. */}
-          {(hovered || selected) && (
+          {(hovered || selected || highlighted) && (
             <Html
               center
               position={[0, labelY, 0.12]}

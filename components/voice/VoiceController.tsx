@@ -24,6 +24,9 @@ export default function VoiceController() {
   const runCommand = useExperienceStore((s) => s.runCommand);
   const setCaption = useExperienceStore((s) => s.setCaption);
   const clientRef = useRef<RealtimeClient | null>(null);
+  // Per-utterance dedup so each named piece glows once, not on every delta.
+  const namedRef = useRef<Set<string>>(new Set());
+  const lastLenRef = useRef(0);
 
   useEffect(() => {
     if (!micActive) {
@@ -36,6 +39,20 @@ export default function VoiceController() {
     const client = new RealtimeClient({
       onStatus: (status) => setRealtimeStatus(status),
       onTranscript: (text) => setCaption(`“${text}”`),
+      onAssistantTranscript: (text) => {
+        // Glow each piece the moment Aurelis names it while suggesting. A new
+        // utterance restarts the transcript from empty → reset the dedup set.
+        if (text.length < lastLenRef.current) namedRef.current.clear();
+        lastLenRef.current = text.length;
+        const lower = text.toLowerCase();
+        const { highlightProduct } = useExperienceStore.getState();
+        for (const p of PRODUCTS) {
+          if (!namedRef.current.has(p.id) && lower.includes(p.name.toLowerCase())) {
+            namedRef.current.add(p.id);
+            highlightProduct(p.id);
+          }
+        }
+      },
       onIntent: (intent) => runCommand(intent),
       onAgentState: (state) => setAgentState(state),
       onToolCall: (name, args) => runToolCall(name, args),

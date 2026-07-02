@@ -36,6 +36,10 @@ let speakTimer: ReturnType<typeof setTimeout> | null = null;
 const FILL_HIGHLIGHT_MS = 1400;
 let fillTimer: ReturnType<typeof setTimeout> | null = null;
 
+/** How long a piece glows when Aurelis names it while suggesting. */
+const PRODUCT_HIGHLIGHT_MS = 1600;
+let highlightTimer: ReturnType<typeof setTimeout> | null = null;
+
 const EMPTY_CHECKOUT: CheckoutForm = {
   name: "",
   email: "",
@@ -62,6 +66,8 @@ export interface ExperienceState {
 
   // --- selection + cart + demo ---
   selectedProduct: SelectedProduct | null;
+  /** Piece momentarily glowing because Aurelis just named it aloud. */
+  highlightedProductId: string | null;
   cart: CartItem[];
   demoFlow: DemoFlowId | null;
   lastReceipt: DemoReceipt | null;
@@ -100,6 +106,8 @@ export interface ExperienceState {
 
   // --- high-level experience actions ---
   selectProduct: (product: SelectedProduct) => void;
+  /** Briefly glow a piece (Aurelis named it) — auto-clears. */
+  highlightProduct: (id: string) => void;
   openDemoFlow: (flow: DemoFlowId) => void;
   closeDemoFlow: () => void;
   startOver: () => void;
@@ -115,6 +123,7 @@ const INITIAL = {
   caption: AGENT.lines.greeting,
   textFallbackOpen: false,
   selectedProduct: null as SelectedProduct | null,
+  highlightedProductId: null as string | null,
   cart: [] as CartItem[],
   demoFlow: null as DemoFlowId | null,
   lastReceipt: null as DemoReceipt | null,
@@ -151,6 +160,12 @@ export const useExperienceStore = create<ExperienceState>((set, get) => ({
   selectProduct: (product) => {
     set({ selectedProduct: product });
     get().speak(AGENT.lines.selectProduct(product.name));
+  },
+
+  highlightProduct: (id) => {
+    if (highlightTimer) clearTimeout(highlightTimer);
+    set({ highlightedProductId: id });
+    highlightTimer = setTimeout(() => set({ highlightedProductId: null }), PRODUCT_HIGHLIGHT_MS);
   },
 
   addToCart: (item) =>
@@ -238,6 +253,7 @@ export const useExperienceStore = create<ExperienceState>((set, get) => ({
 
   startOver: () => {
     if (speakTimer) clearTimeout(speakTimer);
+    if (highlightTimer) clearTimeout(highlightTimer);
     // Preserve the live responsive view — it's a device characteristic, not
     // experience state, so a reset must not snap mobile back to the desktop preset.
     set({ ...INITIAL, view: get().view, caption: AGENT.lines.reset });

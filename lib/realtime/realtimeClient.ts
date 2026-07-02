@@ -19,6 +19,10 @@ import { reportError } from "@/lib/log";
 interface RealtimeClientHandlers {
   onStatus?: (status: RealtimeStatus) => void;
   onTranscript?: (text: string) => void;
+  /** Aurelis' own streamed words (assistant audio transcript), for reacting to
+   *  what she says — e.g. glowing a piece she names. Distinct from onTranscript,
+   *  which also carries the guest's transcribed speech. */
+  onAssistantTranscript?: (text: string) => void;
   /** Intent from the Web Speech fallback path (live path uses onToolCall). */
   onIntent?: (intent: MatchedIntent) => void;
   /** Live conversation lifecycle → orb/agent state. */
@@ -183,7 +187,10 @@ export class RealtimeClient {
     // --- captions: Aurelis' spoken words (streamed) ---
     if (type.startsWith("response.") && type.includes("audio_transcript") && type.endsWith("delta")) {
       this.assistantTranscript += event.delta ?? "";
-      if (this.assistantTranscript) this.handlers.onTranscript?.(this.assistantTranscript);
+      if (this.assistantTranscript) {
+        this.handlers.onTranscript?.(this.assistantTranscript);
+        this.handlers.onAssistantTranscript?.(this.assistantTranscript);
+      }
       return;
     }
     // --- captions: the guest's transcribed words ---

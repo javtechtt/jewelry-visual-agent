@@ -66,6 +66,7 @@ const AUTO_INTERVAL = 3.5; // seconds between automatic advances
 function BoutiqueCarousel() {
   const count = PRODUCTS.length;
   const selectProduct = useExperienceStore((s) => s.selectProduct);
+  const highlightedId = useExperienceStore((s) => s.highlightedProductId);
   const groupRef = useRef<THREE.Group>(null);
   const posRef = useRef(0); // continuous carousel position (in card units)
   const targetRef = useRef(0); // snapped target index
@@ -104,6 +105,18 @@ function BoutiqueCarousel() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // When Aurelis names a piece, glide the carousel to it so the highlight is on
+  // the centred hero (off-centre cards aren't visible on a phone).
+  useEffect(() => {
+    if (!highlightedId) return;
+    const i = PRODUCTS.findIndex((p) => p.id === highlightedId);
+    if (i < 0) return;
+    autoRef.current = 0;
+    dirRef.current = i >= targetRef.current ? 1 : -1;
+    targetRef.current = i;
+    setFocus(i);
+  }, [highlightedId]);
 
   useFrame((_, delta) => {
     if (drag.current.active) {
