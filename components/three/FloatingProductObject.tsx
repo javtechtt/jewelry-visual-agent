@@ -76,20 +76,26 @@ export default function FloatingProductObject({
               model={product.model}
             />
           </group>
-          <Html
-            center
-            position={[0, labelY, 0.12]}
-            distanceFactor={labelDistance}
-            zIndexRange={[8, 0]}
-            style={{ pointerEvents: "none" }}
-          >
-            <div className="scene-label">
-              <span className="scene-label__name">{product.name}</span>
-              <span className="scene-label__hint">
-                {selected ? product.priceLabel : hovered ? product.tagline : ""}
-              </span>
-            </div>
-          </Html>
+          {/* Only the hovered / selected piece shows its name, so long product
+              names on the arc can never overlap their neighbours at any viewport
+              width. At rest the arc stays clean; the pieces are distinct enough
+              to read on their own. */}
+          {(hovered || selected) && (
+            <Html
+              center
+              position={[0, labelY, 0.12]}
+              distanceFactor={labelDistance}
+              zIndexRange={[8, 0]}
+              style={{ pointerEvents: "none" }}
+            >
+              <div className="scene-label">
+                <span className="scene-label__name">{product.name}</span>
+                <span className="scene-label__hint">
+                  {selected ? product.priceLabel : product.tagline}
+                </span>
+              </div>
+            </Html>
+          )}
         </group>
       </Float>
     </group>
