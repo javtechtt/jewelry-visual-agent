@@ -228,6 +228,11 @@ function runToolCall(name: string, args: Record<string, unknown>): string {
       void st.placeOrder();
       return "(Placing the order now — reassure the guest warmly while it completes.)";
     }
+    case "return_to_boutique":
+      // Closes checkout → CheckoutNavigator routes home. Never touches the mic,
+      // so the voice session stays live (only the mic button stops it).
+      store.closeDemoFlow();
+      return "(Back at the boutique — keep chatting warmly; don't announce the move.)";
     case "start_over":
       store.runCommand({ command: "start-over" });
       return "Starting over.";

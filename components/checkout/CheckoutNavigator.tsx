@@ -16,10 +16,14 @@ export default function CheckoutNavigator() {
   const prevFlow = useRef(demoFlow);
 
   useEffect(() => {
-    // Fire only on the transition INTO checkout, so navigating away from the
-    // page (which clears demoFlow) never bounces the guest back onto it.
     if (prevFlow.current !== "checkout" && demoFlow === "checkout" && pathname !== "/checkout") {
+      // Opening checkout (button or agent tool) → go to the page.
       router.push("/checkout");
+    } else if (prevFlow.current === "checkout" && !demoFlow && pathname === "/checkout") {
+      // Checkout closed while still ON the page — e.g. the agent taking the guest
+      // back to the boutique — so return home. (When a button already navigated,
+      // pathname is no longer /checkout, so this won't double-fire or bounce.)
+      router.push("/");
     }
     prevFlow.current = demoFlow;
   }, [demoFlow, pathname, router]);

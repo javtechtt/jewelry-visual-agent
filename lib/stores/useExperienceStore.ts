@@ -254,9 +254,11 @@ export const useExperienceStore = create<ExperienceState>((set, get) => ({
   startOver: () => {
     if (speakTimer) clearTimeout(speakTimer);
     if (highlightTimer) clearTimeout(highlightTimer);
-    // Preserve the live responsive view — it's a device characteristic, not
-    // experience state, so a reset must not snap mobile back to the desktop preset.
-    set({ ...INITIAL, view: get().view, caption: AGENT.lines.reset });
+    // Preserve the live voice session (micActive / status / agentState) AND the
+    // responsive view — a reset must NOT hang up on the guest. Only the mic
+    // button (toggleMic) ever stops the mic.
+    const { view, micActive, realtimeStatus, agentState } = get();
+    set({ ...INITIAL, view, micActive, realtimeStatus, agentState, caption: AGENT.lines.reset });
     get().speak(AGENT.lines.reset);
   },
 
