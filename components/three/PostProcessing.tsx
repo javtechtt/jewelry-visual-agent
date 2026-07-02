@@ -6,8 +6,8 @@
 // soft vignette, and ACES Filmic tone mapping for richer, less washed-out colour
 // (AgX desaturated the products too much).
 
-import { Bloom, EffectComposer, SMAA, ToneMapping, Vignette } from "@react-three/postprocessing";
-import { ToneMappingMode } from "postprocessing";
+import { Bloom, EffectComposer, Noise, SMAA, ToneMapping, Vignette } from "@react-three/postprocessing";
+import { BlendFunction, ToneMappingMode } from "postprocessing";
 
 export default function PostProcessing() {
   // multisampling={0} is REQUIRED: MSAA on the composer's render targets emits a
@@ -23,7 +23,11 @@ export default function PostProcessing() {
         mipmapBlur
         radius={0.8}
       />
-      <Vignette eskil={false} offset={0.3} darkness={0.4} />
+      {/* Deeper frame for cinematic richness (still light-premium, not moody). */}
+      <Vignette eskil={false} offset={0.26} darkness={0.52} />
+      {/* Fine film grain — reads as "expensive film", and breaks up the large
+          flat ivory areas so they never look empty/washed-out. */}
+      <Noise premultiply blendFunction={BlendFunction.OVERLAY} opacity={0.045} />
       <ToneMapping mode={ToneMappingMode.ACES_FILMIC} />
     </EffectComposer>
   );
