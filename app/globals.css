@@ -379,23 +379,98 @@ button {
   gap: 0.45rem;
 }
 .mic-button {
+  position: relative;
   width: 66px;
   height: 66px;
   border-radius: 50%;
-  border: 1px solid var(--glass-border);
-  background: radial-gradient(circle at 35% 30%, #fffaf0, #f0e3c8 75%);
-  color: #6a583a;
+  border: none;
+  background: transparent;
+  padding: 0;
   display: grid;
   place-items: center;
-  box-shadow: 0 14px 40px -14px rgba(201, 169, 106, 0.8), inset 0 0 18px rgba(255, 255, 255, 0.6);
-  transition: box-shadow 0.4s ease, color 0.4s ease;
+  cursor: pointer;
+  /* let the sheen + ripples bleed beyond the hit target */
+  overflow: visible;
+  -webkit-tap-highlight-color: transparent;
 }
-.mic-button--on {
-  color: #3a2f1c;
-  box-shadow: 0 0 0 6px rgba(228, 210, 168, 0.35), 0 16px 44px -12px rgba(201, 169, 106, 0.9);
+/* Rotating gilded conic sheen framing the orb. */
+.mic-button__halo {
+  position: absolute;
+  inset: -12px;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 0deg,
+    rgba(201, 169, 106, 0) 0deg,
+    rgba(228, 210, 168, 0.75) 70deg,
+    rgba(255, 250, 240, 0.95) 130deg,
+    rgba(201, 169, 106, 0.35) 205deg,
+    rgba(201, 169, 106, 0) 320deg
+  );
+  filter: blur(6px);
+  opacity: 0.85;
+  pointer-events: none;
 }
-.mic-button--listening { box-shadow: 0 0 0 7px rgba(173, 205, 230, 0.4), 0 16px 44px -12px rgba(140, 180, 220, 0.8); }
-.mic-button--speaking { box-shadow: 0 0 0 7px rgba(247, 230, 200, 0.5), 0 16px 48px -10px rgba(201, 169, 106, 0.95); }
+/* Concentric rings radiating out while speaking. */
+.mic-button__ripple {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid var(--ring, rgba(201, 169, 106, 0.5));
+  pointer-events: none;
+}
+/* The visible gilded disc; its glow shifts with the state var. */
+.mic-button__core {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 1px solid var(--glass-border);
+  background: radial-gradient(circle at 35% 30%, #fffaf0, #f0e3c8 75%);
+  display: grid;
+  place-items: center;
+  box-shadow:
+    0 0 0 5px var(--ring, rgba(228, 210, 168, 0.45)),
+    0 18px 52px -8px var(--glow, rgba(201, 169, 106, 0.7)),
+    inset 0 0 18px rgba(255, 255, 255, 0.6);
+  transition: box-shadow 0.5s ease;
+}
+.mic-button__form {
+  display: grid;
+  place-items: center;
+  color: var(--accent, #6a583a);
+}
+/* Equalizer (listening / speaking). */
+.mic-bars {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  height: 22px;
+}
+.mic-bars__bar {
+  width: 3px;
+  height: 22px;
+  border-radius: 3px;
+  background: var(--accent, currentColor);
+  transform-origin: center;
+}
+/* Orbiting dots (thinking). */
+.mic-orbit {
+  position: relative;
+  width: 26px;
+  height: 26px;
+}
+.mic-orbit__dot {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 5px;
+  height: 5px;
+  margin: -2.5px;
+  border-radius: 50%;
+  background: var(--accent, currentColor);
+}
+.mic-orbit__dot:nth-child(1) { transform: rotate(0deg) translateY(-11px); }
+.mic-orbit__dot:nth-child(2) { transform: rotate(120deg) translateY(-11px); }
+.mic-orbit__dot:nth-child(3) { transform: rotate(240deg) translateY(-11px); }
 .mic-dock__hint {
   font-size: 0.58rem;
   letter-spacing: 0.24em;
