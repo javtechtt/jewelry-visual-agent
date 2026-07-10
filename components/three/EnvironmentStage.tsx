@@ -37,18 +37,21 @@ export default function EnvironmentStage() {
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.9, 0]} receiveShadow raycast={() => null}>
         <planeGeometry args={[70, 70]} />
         {quality.reflections ? (
+          // Tuned to read as soft marble, NOT chrome: a low-mirror, rough,
+          // barely-metallic surface so it becomes a champagne gradient rather
+          // than a blown white band bouncing the studio lights straight back.
           <MeshReflectorMaterial
             resolution={quality.reflectorResolution}
-            mirror={0.42}
+            mirror={0.22}
             mixBlur={8}
-            mixStrength={1.1}
+            mixStrength={0.7}
             blur={[420, 110]}
-            roughness={0.8}
+            roughness={0.9}
             depthScale={1.1}
             minDepthThreshold={0.4}
             maxDepthThreshold={1.25}
             color={atmosphere.bottom}
-            metalness={0.18}
+            metalness={0.08}
           />
         ) : (
           <meshStandardMaterial color={atmosphere.bottom} roughness={0.9} metalness={0.1} />
@@ -71,27 +74,32 @@ export default function EnvironmentStage() {
         color="#7c715c"
       />
 
-      {/* Procedural studio reflections — soft champagne key + cool rim. */}
-      <Environment resolution={256} frames={1}>
+      {/* Procedural studio reflections — soft champagne key + cool rim.
+          `environmentIntensity` is the one clean global dial for the image-based
+          lighting (the renderer's toneMappingExposure is a no-op here: the
+          EffectComposer forces NoToneMapping while it's mounted). */}
+      <Environment resolution={256} frames={1} environmentIntensity={0.82}>
         <group>
           <Lightformer
             form="rect"
-            intensity={2.4}
+            intensity={2.0}
             color="#fff4e2"
             position={[0, 5, -3]}
             scale={[12, 7, 1]}
           />
+          {/* Warm off-white, never pure #ffffff — this was the only pure-white
+              source feeding the IBL, and the main cause of clipped highlights. */}
           <Lightformer
             form="rect"
-            intensity={1.3}
-            color="#ffffff"
+            intensity={1.05}
+            color="#fbf3e6"
             position={[-6, 2.5, 2]}
             rotation-y={Math.PI / 4}
             scale={[7, 7, 1]}
           />
           <Lightformer
             form="rect"
-            intensity={1.1}
+            intensity={0.95}
             color="#e8f0ff"
             position={[6, 2.5, 2]}
             rotation-y={-Math.PI / 4}
@@ -99,7 +107,7 @@ export default function EnvironmentStage() {
           />
           <Lightformer
             form="ring"
-            intensity={1.5}
+            intensity={1.3}
             color="#ffe7c2"
             position={[0, 3, 5]}
             scale={[3.4, 3.4, 1]}

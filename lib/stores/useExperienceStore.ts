@@ -23,7 +23,7 @@ import type {
 } from "@/types/demo";
 import type { ViewMode } from "@/config/responsive";
 import { AGENT } from "@/config/agent";
-import { PRODUCT_MAP } from "@/config/products";
+import { PRODUCT_MAP, PRODUCTS } from "@/config/products";
 import { cartTotalLabel } from "@/lib/cart";
 import { runCheckout } from "@/lib/demo/demoActions";
 import { isEmail } from "@/lib/demo/demoValidation";
@@ -108,6 +108,10 @@ export interface ExperienceState {
   selectProduct: (product: SelectedProduct) => void;
   /** Briefly glow a piece (Aurelis named it) — auto-clears. */
   highlightProduct: (id: string) => void;
+  /** Exit the focus view (deselect the focused piece). */
+  clearSelectedProduct: () => void;
+  /** Move focus to the next/previous piece in the collection (wraps). */
+  focusNextProduct: (delta: 1 | -1) => void;
   openDemoFlow: (flow: DemoFlowId) => void;
   closeDemoFlow: () => void;
   startOver: () => void;
@@ -166,6 +170,16 @@ export const useExperienceStore = create<ExperienceState>((set, get) => ({
     if (highlightTimer) clearTimeout(highlightTimer);
     set({ highlightedProductId: id });
     highlightTimer = setTimeout(() => set({ highlightedProductId: null }), PRODUCT_HIGHLIGHT_MS);
+  },
+
+  clearSelectedProduct: () => set({ selectedProduct: null }),
+
+  focusNextProduct: (delta) => {
+    const cur = get().selectedProduct;
+    const idx = cur ? PRODUCTS.findIndex((p) => p.id === cur.id) : -1;
+    const next = idx < 0 ? 0 : (idx + delta + PRODUCTS.length) % PRODUCTS.length;
+    const p = PRODUCTS[next];
+    get().selectProduct({ id: p.id, name: p.name, priceLabel: p.priceLabel });
   },
 
   addToCart: (item) =>

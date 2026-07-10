@@ -40,6 +40,8 @@ export default function FloatingProductObject({
   const selectProduct = useExperienceStore((s) => s.selectProduct);
   const selectedId = useExperienceStore((s) => s.selectedProduct?.id);
   const selected = selectedId === product.id;
+  // Another piece is focused → dim this one for separation (DOF blurs it too).
+  const dimmed = selectedId != null && !selected;
   // Glows briefly when Aurelis names this piece aloud while suggesting.
   const highlighted = useExperienceStore((s) => s.highlightedProductId === product.id);
 
@@ -79,6 +81,7 @@ export default function FloatingProductObject({
               heroRotation={product.heroRotation}
               modelScale={product.modelScale}
               spin={product.animate ?? true}
+              dimmed={dimmed}
             />
           </group>
           {/* Only the hovered / selected piece shows its name, so long product

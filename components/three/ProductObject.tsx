@@ -12,7 +12,7 @@ import { useFrame } from "@react-three/fiber";
 import { useGLTF, useTexture } from "@react-three/drei";
 import * as THREE from "three";
 import type { ProductAccent, ProductShape } from "@/types/product";
-import { HOVER } from "@/config/motion";
+import { FOCUS, HOVER } from "@/config/motion";
 
 interface ProductObjectProps {
   shape: ProductShape;
@@ -28,6 +28,8 @@ interface ProductObjectProps {
   heroRotation?: [number, number, number];
   /** Persistent size multiplier to normalise apparent size across pieces. */
   modelScale?: number;
+  /** Another piece is focused — dim this one slightly for separation. */
+  dimmed?: boolean;
 }
 
 // A gentle sway around the hero angle — a poised presentation with subtle life,
@@ -252,6 +254,7 @@ export default function ProductObject({
   model,
   heroRotation = [0, 0, 0],
   modelScale = 1,
+  dimmed = false,
 }: ProductObjectProps) {
   const groupRef = useRef<THREE.Group>(null);
   // Per-instance phase so the pieces don't sway in unison (client-only canvas).
@@ -272,13 +275,12 @@ export default function ProductObject({
 
   useEffect(() => () => material.dispose(), [material]);
 
-  const active = hovered || focused;
-
   useFrame((state, delta) => {
     const k = 1 - Math.pow(0.0015, delta);
     if (groupRef.current) {
       if (hoverScale) {
-        const targetScale = active ? HOVER.scale : 1;
+        // Focus (click) is a clear step beyond hover (tease).
+        const targetScale = focused ? FOCUS.scale : hovered ? HOVER.scale : 1;
         const next = THREE.MathUtils.lerp(groupRef.current.scale.x, targetScale, k);
         groupRef.current.scale.setScalar(next);
       }
@@ -289,12 +291,13 @@ export default function ProductObject({
         groupRef.current.rotation.y = Math.sin(t * SWAY_SPEED + phase) * SWAY_AMP;
       }
     }
-    const targetEmissive = active ? 0.12 * HOVER.emissiveBoost : 0.12;
-    material.emissiveIntensity = THREE.MathUtils.lerp(
-      material.emissiveIntensity,
-      targetEmissive,
-      k,
-    );
+    const rest = dimmed ? 0.06 : 0.12;
+    const targetEmissive = focused
+      ? 0.12 * FOCUS.emissiveBoost
+      : hovered
+        ? 0.12 * HOVER.emissiveBoost
+        : rest;
+    material.emissiveIntensity = THREE.MathUtils.lerp(material.emissiveIntensity, targetEmissive, k);
   });
 
   const placeholder = <ShapeMesh shape={shape} material={material} />;

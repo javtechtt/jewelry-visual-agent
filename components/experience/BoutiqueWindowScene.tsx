@@ -13,9 +13,8 @@ import { Float, Html } from "@react-three/drei";
 import * as THREE from "three";
 import { PRODUCTS } from "@/config/products";
 import { useExperienceStore } from "@/lib/stores/useExperienceStore";
-import { BOUTIQUE_LAYOUT } from "@/config/scenes";
+import { BOUTIQUE_LAYOUT, getArcPosition } from "@/config/scenes";
 import type { Product } from "@/types/product";
-import type { Vec3 } from "@/types/experience";
 import FloatingProductObject from "@/components/three/FloatingProductObject";
 import ProductObject from "@/components/three/ProductObject";
 
@@ -29,15 +28,29 @@ function BoutiqueArc() {
   const count = PRODUCTS.length;
   const view = useExperienceStore((s) => s.view);
   const layout = BOUTIQUE_LAYOUT[view];
+  const focused = useExperienceStore((s) => s.selectedProduct !== null);
+  const clearSelectedProduct = useExperienceStore((s) => s.clearSelectedProduct);
 
   return (
     <group>
+      {/* Click-away to exit focus. Sits behind the pieces; they stopPropagation
+          their own clicks, so this only fires on empty space. Only present while
+          focused, so it never interferes with the rest state. */}
+      {focused && (
+        <mesh
+          position={[0, 0.4, -1]}
+          onClick={(e) => {
+            e.stopPropagation();
+            clearSelectedProduct();
+          }}
+        >
+          <planeGeometry args={[60, 40]} />
+          <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+        </mesh>
+      )}
       {PRODUCTS.map((product, index) => {
-        const t = count > 1 ? index / (count - 1) : 0.5;
-        const x = (t - 0.5) * layout.spread;
-        const z = -Math.abs(x) * 0.18; // curve the ends gently away
-        const position: Vec3 = [x, 0.3, z];
-        const rotationY = -x * 0.05; // turn pieces toward the camera
+        const position = getArcPosition(index, count, layout);
+        const rotationY = -position[0] * 0.05; // turn pieces toward the camera
         // Product names are long (2–3 words); on the arc, drop every other
         // label a row lower so adjacent names never collide horizontally.
         const labelY = layout.labelY - (index % 2 === 1 ? layout.labelStagger : 0);
