@@ -27,7 +27,7 @@ import { BlendFunction, ToneMappingMode } from "postprocessing";
 import type { DepthOfFieldEffect } from "postprocessing";
 import * as THREE from "three";
 import { useExperienceStore } from "@/lib/stores/useExperienceStore";
-import { BOUTIQUE_LAYOUT, getArcPosition } from "@/config/scenes";
+import { DUO_LAYOUT, getDuoSlot } from "@/config/scenes";
 import { PRODUCTS } from "@/config/products";
 
 export default function PostProcessing() {
@@ -44,7 +44,7 @@ export default function PostProcessing() {
       selectedId && view !== "portrait" ? PRODUCTS.findIndex((p) => p.id === selectedId) : -1;
     const focused = idx >= 0;
     if (focused) {
-      const pos = getArcPosition(idx, PRODUCTS.length, BOUTIQUE_LAYOUT[view]);
+      const pos = getDuoSlot(idx, DUO_LAYOUT[view]);
       focusTarget.set(pos[0], pos[1] + 0.32, pos[2]);
     }
     // Ramp the blur in/out (~0.5s) — reduced motion keeps it crisp.

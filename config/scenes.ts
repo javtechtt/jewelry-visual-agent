@@ -127,3 +127,41 @@ export function getArcPosition(index: number, count: number, layout: BoutiqueLay
   const z = -Math.abs(x) * 0.18; // curve the ends gently away
   return [x, 0.3, z];
 }
+
+// ============================================================================
+// TWO-UP SELECTOR
+//
+// The boutique now presents the collection as a paged selector: exactly TWO
+// pieces on screen at a time (a left slot and a right slot), and the guest pages
+// through the pairs. Even product indices take the left slot, odd the right, so
+// a piece's slot is stable no matter which page is showing — SceneCamera and
+// PostProcessing derive the focus target straight from the product's index.
+// ============================================================================
+
+export interface DuoLayout {
+  /** Horizontal offset of each slot from centre (left = −slotX, right = +slotX). */
+  slotX: number;
+  /** Visual product scale multiplier (two pieces → they can be larger). */
+  objectScale: number;
+  /** Tap-target (hit plane) scale multiplier. */
+  hitScale: number;
+  /** Label vertical offset below each piece. */
+  labelY: number;
+  /** Html distanceFactor for the labels (smaller = smaller on screen). */
+  labelDistance: number;
+}
+
+export const DUO_LAYOUT: Record<ViewMode, DuoLayout> = {
+  desktop: { slotX: 1.95, objectScale: 1.35, hitScale: 1, labelY: -1.0, labelDistance: 9 },
+  landscape: { slotX: 2.1, objectScale: 1.0, hitScale: 1.05, labelY: -0.82, labelDistance: 5.4 },
+  // Portrait keeps the 1-up swipe carousel (BoutiqueWindowScene), so these are
+  // unused there — kept only to satisfy the per-view record.
+  portrait: { slotX: 0, objectScale: 0.5, hitScale: 1.3, labelY: -0.5, labelDistance: 3.6 },
+};
+
+/** World position of a piece's slot in the two-up selector. Even index → left
+ *  slot, odd → right slot (stable across pages). */
+export function getDuoSlot(index: number, layout: DuoLayout): Vec3 {
+  const x = index % 2 === 0 ? -layout.slotX : layout.slotX;
+  return [x, 0.3, 0];
+}

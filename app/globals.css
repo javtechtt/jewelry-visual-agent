@@ -301,6 +301,71 @@ button {
 .controls--left { left: 2rem; }
 .controls--right { right: 2rem; }
 
+/* Two-up selector pager — centred ‹ · · · › for paging the collection. Sits
+   above the caption + mic dock (which own the bottom-centre band). */
+.duo-pager {
+  position: fixed;
+  bottom: 10.8rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.4rem 0.7rem;
+  border-radius: 999px;
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(14px);
+}
+.duo-pager__arrow {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--ink-soft);
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: color 0.2s ease, background 0.2s ease, opacity 0.2s ease;
+}
+.duo-pager__arrow:hover:not(:disabled) { color: var(--ink); background: rgba(201, 169, 106, 0.12); }
+.duo-pager__arrow:disabled { opacity: 0.28; cursor: default; }
+.duo-pager__dots {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+.duo-pager__dot {
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+.duo-pager__dot::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  border: 1px solid var(--hairline);
+  background: rgba(255, 255, 255, 0.5);
+  transition: all 0.25s ease;
+}
+.duo-pager__dot--on::before {
+  width: 9px;
+  height: 9px;
+  background: var(--champagne);
+  border-color: var(--champagne);
+  box-shadow: 0 0 0 4px rgba(201, 169, 106, 0.16);
+}
+
 /* Focus card — the "commit" state for a piece (bottom-left glass card). */
 .focus-card {
   display: flex;

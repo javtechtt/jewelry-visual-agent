@@ -25,6 +25,9 @@ interface FloatingProductObjectProps {
   labelY?: number;
   /** Html distanceFactor for the label — smaller = smaller on-screen text. */
   labelDistance?: number;
+  /** Keep the name/price label visible at rest (the two-up selector — with only
+   *  two well-separated pieces, labels never collide, so both can always show). */
+  alwaysLabel?: boolean;
 }
 
 export default function FloatingProductObject({
@@ -35,6 +38,7 @@ export default function FloatingProductObject({
   hitScale = 1,
   labelY = -0.95,
   labelDistance = 8,
+  alwaysLabel = false,
 }: FloatingProductObjectProps) {
   const [hovered, setHovered] = useState(false);
   const selectProduct = useExperienceStore((s) => s.selectProduct);
@@ -88,7 +92,7 @@ export default function FloatingProductObject({
               names on the arc can never overlap their neighbours at any viewport
               width. At rest the arc stays clean; the pieces are distinct enough
               to read on their own. */}
-          {(hovered || selected || highlighted) && (
+          {(alwaysLabel || hovered || selected || highlighted) && (
             <Html
               center
               position={[0, labelY, 0.12]}

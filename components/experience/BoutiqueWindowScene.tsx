@@ -1,7 +1,8 @@
 "use client";
 
 // The boutique home page — the single showcase.
-// - Desktop / landscape: the collection floats in a gentle horizontal arc.
+// - Desktop / landscape: a two-up product selector — exactly two pieces on
+//   screen at a time (left + right slot), the guest pages through the pairs.
 // - Portrait (phones): a single large hero the guest swipes through one at a
 //   time (tap to focus), with a dot indicator. A vertical column never fit the
 //   pieces on a narrow screen, so portrait shows one at a time instead.
@@ -13,23 +14,72 @@ import { Float, Html } from "@react-three/drei";
 import * as THREE from "three";
 import { PRODUCTS } from "@/config/products";
 import { useExperienceStore } from "@/lib/stores/useExperienceStore";
-import { BOUTIQUE_LAYOUT, getArcPosition } from "@/config/scenes";
+import { DUO_LAYOUT, getDuoSlot } from "@/config/scenes";
 import type { Product } from "@/types/product";
 import FloatingProductObject from "@/components/three/FloatingProductObject";
 import ProductObject from "@/components/three/ProductObject";
 
 export default function BoutiqueWindowScene() {
   const view = useExperienceStore((s) => s.view);
-  return view === "portrait" ? <BoutiqueCarousel /> : <BoutiqueArc />;
+  return view === "portrait" ? <BoutiqueCarousel /> : <BoutiqueDuo />;
 }
 
-// --- Desktop / landscape: the horizontal arc ---------------------------------
-function BoutiqueArc() {
-  const count = PRODUCTS.length;
+// --- Desktop / landscape: the two-up paged selector --------------------------
+// Only the current page's two pieces are ever mounted, so no more than two are
+// on screen at once. Turning the page swaps the pair with a quick scale-out →
+// swap → scale-in so the exchange reads as a deliberate "flip", never a pop.
+function BoutiqueDuo() {
   const view = useExperienceStore((s) => s.view);
-  const layout = BOUTIQUE_LAYOUT[view];
+  const layout = DUO_LAYOUT[view];
+  const duoPage = useExperienceStore((s) => s.duoPage);
   const focused = useExperienceStore((s) => s.selectedProduct !== null);
   const clearSelectedProduct = useExperienceStore((s) => s.clearSelectedProduct);
+  const reduced = useReducedMotion();
+
+  // The pair currently mounted. Lags `duoPage` during the flip: we scale the old
+  // pair out first, then adopt the new page, then scale the new pair in.
+  const [renderPage, setRenderPage] = useState(duoPage);
+  const leftRef = useRef<THREE.Group>(null);
+  const rightRef = useRef<THREE.Group>(null);
+  const scaleRef = useRef(1);
+  const phase = useRef<"idle" | "out" | "in">("idle");
+
+  useFrame((_, delta) => {
+    if (reduced) {
+      // No flip animation — swap instantly and hold full scale.
+      if (renderPage !== duoPage) setRenderPage(duoPage);
+      scaleRef.current = 1;
+    } else {
+      if (phase.current === "idle" && duoPage !== renderPage) phase.current = "out";
+      if (phase.current === "out") {
+        scaleRef.current = THREE.MathUtils.lerp(scaleRef.current, 0, 1 - Math.pow(0.00004, delta));
+        if (scaleRef.current < 0.04) {
+          scaleRef.current = 0;
+          setRenderPage(duoPage);
+          phase.current = "in";
+        }
+      } else if (phase.current === "in") {
+        // A fresh page request mid-fade-in restarts the flip.
+        if (duoPage !== renderPage) phase.current = "out";
+        else {
+          scaleRef.current = THREE.MathUtils.lerp(scaleRef.current, 1, 1 - Math.pow(0.005, delta));
+          if (scaleRef.current > 0.985) {
+            scaleRef.current = 1;
+            phase.current = "idle";
+          }
+        }
+      }
+    }
+    const s = scaleRef.current;
+    leftRef.current?.scale.setScalar(s);
+    rightRef.current?.scale.setScalar(s);
+  });
+
+  const start = renderPage * 2;
+  const pair = [
+    { product: PRODUCTS[start], ref: leftRef, index: start },
+    { product: PRODUCTS[start + 1], ref: rightRef, index: start + 1 },
+  ];
 
   return (
     <group>
@@ -48,23 +98,24 @@ function BoutiqueArc() {
           <meshBasicMaterial transparent opacity={0} depthWrite={false} />
         </mesh>
       )}
-      {PRODUCTS.map((product, index) => {
-        const position = getArcPosition(index, count, layout);
-        const rotationY = -position[0] * 0.05; // turn pieces toward the camera
-        // Product names are long (2–3 words); on the arc, drop every other
-        // label a row lower so adjacent names never collide horizontally.
-        const labelY = layout.labelY - (index % 2 === 1 ? layout.labelStagger : 0);
+      {pair.map(({ product, ref, index }) => {
+        if (!product) return null;
+        const slot = getDuoSlot(index, layout);
         return (
-          <FloatingProductObject
-            key={product.id}
-            product={product}
-            position={position}
-            rotationY={rotationY}
-            objectScale={layout.objectScale}
-            hitScale={layout.hitScale}
-            labelY={labelY}
-            labelDistance={layout.labelDistance}
-          />
+          // Outer group holds the slot position; its scale is animated for the
+          // page flip so the piece shrinks/grows in place (not toward centre).
+          <group key={product.id} ref={ref} position={slot}>
+            <FloatingProductObject
+              product={product}
+              position={[0, 0, 0]}
+              rotationY={-slot[0] * 0.05}
+              objectScale={layout.objectScale}
+              hitScale={layout.hitScale}
+              labelY={layout.labelY}
+              labelDistance={layout.labelDistance}
+              alwaysLabel
+            />
+          </group>
         );
       })}
     </group>

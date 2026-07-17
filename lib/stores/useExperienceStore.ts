@@ -50,6 +50,11 @@ const EMPTY_CHECKOUT: CheckoutForm = {
 
 const EMPTY_CARD: CardDetails = { number: "", exp: "", cvc: "" };
 
+/** The collection is shown two pieces at a time (a paged selector). */
+export const DUO_PER_PAGE = 2;
+export const DUO_PAGE_COUNT = Math.ceil(PRODUCTS.length / DUO_PER_PAGE);
+const clampPage = (p: number) => Math.max(0, Math.min(DUO_PAGE_COUNT - 1, p));
+
 export interface ExperienceState {
   // --- core scene state (single home scene) ---
   scene: SceneId;
@@ -65,6 +70,8 @@ export interface ExperienceState {
   textFallbackOpen: boolean;
 
   // --- selection + cart + demo ---
+  /** Which pair of the collection the two-up selector is showing (0-based). */
+  duoPage: number;
   selectedProduct: SelectedProduct | null;
   /** Piece momentarily glowing because Aurelis just named it aloud. */
   highlightedProductId: string | null;
@@ -104,6 +111,12 @@ export interface ExperienceState {
   resetCheckout: () => void;
   placeOrder: () => Promise<void>;
 
+  // --- two-up selector paging ---
+  /** Jump the selector to a specific page (clamped to range). */
+  setDuoPage: (page: number) => void;
+  /** Page the selector forward/back through the collection (clamped, no wrap). */
+  nextDuoPage: (delta: 1 | -1) => void;
+
   // --- high-level experience actions ---
   selectProduct: (product: SelectedProduct) => void;
   /** Briefly glow a piece (Aurelis named it) — auto-clears. */
@@ -126,6 +139,7 @@ const INITIAL = {
   micActive: false,
   caption: AGENT.lines.greeting,
   textFallbackOpen: false,
+  duoPage: 0,
   selectedProduct: null as SelectedProduct | null,
   highlightedProductId: null as string | null,
   cart: [] as CartItem[],
@@ -161,8 +175,14 @@ export const useExperienceStore = create<ExperienceState>((set, get) => ({
   toggleTextFallback: () => set({ textFallbackOpen: !get().textFallbackOpen }),
   setReceipt: (lastReceipt) => set({ lastReceipt }),
 
+  setDuoPage: (page) => set({ duoPage: clampPage(page) }),
+  nextDuoPage: (delta) => set((s) => ({ duoPage: clampPage(s.duoPage + delta) })),
+
   selectProduct: (product) => {
-    set({ selectedProduct: product });
+    // Page the selector to the pair holding this piece so a voice/keyboard pick
+    // of an off-page piece brings it on screen before the focus dolly.
+    const idx = PRODUCTS.findIndex((p) => p.id === product.id);
+    set(idx >= 0 ? { selectedProduct: product, duoPage: Math.floor(idx / DUO_PER_PAGE) } : { selectedProduct: product });
     get().speak(AGENT.lines.selectProduct(product.name));
   },
 

@@ -8,7 +8,7 @@
 
 import { useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { useExperienceStore } from "@/lib/stores/useExperienceStore";
+import { DUO_PAGE_COUNT, useExperienceStore } from "@/lib/stores/useExperienceStore";
 import { PRODUCT_MAP, PRODUCTS } from "@/config/products";
 import { EASE } from "@/config/motion";
 
@@ -23,27 +23,40 @@ export default function MinimalControls() {
   const cart = useExperienceStore((s) => s.cart);
   const demoFlow = useExperienceStore((s) => s.demoFlow);
   const view = useExperienceStore((s) => s.view);
+  const duoPage = useExperienceStore((s) => s.duoPage);
+  const setDuoPage = useExperienceStore((s) => s.setDuoPage);
+  const nextDuoPage = useExperienceStore((s) => s.nextDuoPage);
 
   const canCheckout = cart.length > 0 || selectedProduct !== null;
   const focused = selectedProduct !== null && !demoFlow;
+  // The two-up selector pager shows on the arc views at rest (not while a piece
+  // is focused, not in checkout, and not on the portrait swipe carousel).
+  const showPager = !focused && !demoFlow && view !== "portrait";
   const product = selectedProduct ? PRODUCT_MAP[selectedProduct.id] : undefined;
   const inCart = selectedProduct ? cart.some((c) => c.id === selectedProduct.id) : false;
 
-  // Keyboard: Esc exits focus; ← / → move between pieces (arc views only).
+  // Keyboard (arc views only): while focused, Esc exits and ← / → move between
+  // pieces; at rest, ← / → turn the pages of the two-up selector.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (!selectedProduct || demoFlow) return;
-      if (e.key === "Escape") {
+      if (demoFlow || view === "portrait") return;
+      const isArrow = e.key === "ArrowRight" || e.key === "ArrowLeft";
+      if (selectedProduct) {
+        if (e.key === "Escape") {
+          e.preventDefault();
+          clearSelectedProduct();
+        } else if (isArrow) {
+          e.preventDefault();
+          focusNextProduct(e.key === "ArrowRight" ? 1 : -1);
+        }
+      } else if (isArrow) {
         e.preventDefault();
-        clearSelectedProduct();
-      } else if (view !== "portrait" && (e.key === "ArrowRight" || e.key === "ArrowLeft")) {
-        e.preventDefault();
-        focusNextProduct(e.key === "ArrowRight" ? 1 : -1);
+        nextDuoPage(e.key === "ArrowRight" ? 1 : -1);
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [selectedProduct, demoFlow, view, clearSelectedProduct, focusNextProduct]);
+  }, [selectedProduct, demoFlow, view, clearSelectedProduct, focusNextProduct, nextDuoPage]);
 
   return (
     <>
@@ -99,6 +112,52 @@ export default function MinimalControls() {
           )}
         </AnimatePresence>
       </div>
+
+      {/* Bottom-centre: the two-up selector pager (‹ · · · ›) */}
+      <AnimatePresence>
+        {showPager && DUO_PAGE_COUNT > 1 && (
+          <motion.div
+            className="duo-pager"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 10 }}
+            transition={{ duration: 0.36, ease: EASE.cinematic }}
+            role="group"
+            aria-label="Browse the collection"
+          >
+            <button
+              type="button"
+              className="duo-pager__arrow"
+              aria-label="Previous pieces"
+              onClick={() => nextDuoPage(-1)}
+              disabled={duoPage <= 0}
+            >
+              ‹
+            </button>
+            <div className="duo-pager__dots">
+              {Array.from({ length: DUO_PAGE_COUNT }, (_, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  aria-label={`Pieces ${i * 2 + 1}–${i * 2 + 2}`}
+                  aria-current={i === duoPage}
+                  className={`duo-pager__dot${i === duoPage ? " duo-pager__dot--on" : ""}`}
+                  onClick={() => setDuoPage(i)}
+                />
+              ))}
+            </div>
+            <button
+              type="button"
+              className="duo-pager__arrow"
+              aria-label="Next pieces"
+              onClick={() => nextDuoPage(1)}
+              disabled={duoPage >= DUO_PAGE_COUNT - 1}
+            >
+              ›
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Bottom-right: checkout */}
       <div className="controls controls--right">

@@ -13,7 +13,7 @@ import { useFrame, useThree } from "@react-three/fiber";
 import { useReducedMotion } from "framer-motion";
 import * as THREE from "three";
 import { useExperienceStore } from "@/lib/stores/useExperienceStore";
-import { BOUTIQUE_LAYOUT, getArcPosition, getSceneCamera, PARALLAX } from "@/config/scenes";
+import { DUO_LAYOUT, getDuoSlot, getSceneCamera, PARALLAX } from "@/config/scenes";
 import { FOCUS } from "@/config/motion";
 import { PRODUCTS } from "@/config/products";
 import type { Vec3 } from "@/types/experience";
@@ -42,7 +42,7 @@ export default function SceneCamera() {
     let camTarget: Vec3;
     let camFov: number;
     if (focused) {
-      const pos = getArcPosition(focusIdx, PRODUCTS.length, BOUTIQUE_LAYOUT[view]);
+      const pos = getDuoSlot(focusIdx, DUO_LAYOUT[view]);
       const py = pos[1] + 0.32; // look at the piece body, a touch above the arc line
       camPos = [pos[0], py + 0.12, pos[2] + FOCUS.cameraDistance];
       camTarget = [pos[0], py, pos[2]];
