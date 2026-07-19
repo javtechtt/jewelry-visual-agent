@@ -11,8 +11,8 @@
 export default function LightRig() {
   return (
     <>
-      <hemisphereLight args={["#fff6e8", "#e8dcc6", 0.5]} />
-      <ambientLight intensity={0.15} />
+      <hemisphereLight args={["#fff6e8", "#e8dcc6", 0.6]} />
+      <ambientLight intensity={0.2} />
       <directionalLight
         position={[4.5, 6.5, 4]}
         intensity={1.4}
@@ -32,7 +32,7 @@ export default function LightRig() {
           read present against the ivory backdrop, WITHOUT re-brightening the
           up-facing floor or the distant back wall (those catch it far less).
           This is the counter to the graded-down look making dark pieces murky. */}
-      <directionalLight position={[0, 1.8, 7]} intensity={0.62} color="#fff2e0" />
+      <directionalLight position={[0, 1.8, 7]} intensity={0.92} color="#fff2e0" />
       <spotLight
         position={[0, 5.5, 2.5]}
         angle={0.6}

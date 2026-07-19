@@ -78,7 +78,7 @@ export default function EnvironmentStage() {
           `environmentIntensity` is the one clean global dial for the image-based
           lighting (the renderer's toneMappingExposure is a no-op here: the
           EffectComposer forces NoToneMapping while it's mounted). */}
-      <Environment resolution={256} frames={1} environmentIntensity={0.9}>
+      <Environment resolution={256} frames={1} environmentIntensity={1.02}>
         <group>
           <Lightformer
             form="rect"
