@@ -307,7 +307,8 @@ button {
   position: fixed;
   bottom: 10.8rem;
   left: 50%;
-  transform: translateX(-50%);
+  /* Horizontal centring (translateX(-50%)) is applied via framer-motion's `x`
+     in MinimalControls — its animated transform would override a CSS one. */
   z-index: 30;
   display: flex;
   align-items: center;

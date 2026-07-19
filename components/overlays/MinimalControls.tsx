@@ -118,9 +118,12 @@ export default function MinimalControls() {
         {showPager && DUO_PAGE_COUNT > 1 && (
           <motion.div
             className="duo-pager"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 10 }}
+            // x:"-50%" must live in the motion transform, not just CSS: framer's
+            // animated `y` writes an inline transform that would otherwise drop
+            // the CSS translateX(-50%) and shove the pill off-centre.
+            initial={{ opacity: 0, y: 10, x: "-50%" }}
+            animate={{ opacity: 1, y: 0, x: "-50%" }}
+            exit={{ opacity: 0, y: 10, x: "-50%" }}
             transition={{ duration: 0.36, ease: EASE.cinematic }}
             role="group"
             aria-label="Browse the collection"
