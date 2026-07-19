@@ -56,6 +56,8 @@ export const PRODUCTS: Product[] = [
     heroRotation: [1.15, 0.5, 0.1],
     modelScale: 1.2,
     animate: false,
+    // The glossy pearls run hot under the brightened stage — trim them back.
+    lightness: 0.74,
   },
   {
     id: "atelier-top-handle",
@@ -68,6 +70,8 @@ export const PRODUCTS: Product[] = [
     model: "/models/products/bags.glb",
     heroRotation: [0, -0.28, 0],
     modelScale: 0.94,
+    // The leather picks up a lot of the front fill — dial it back down.
+    lightness: 0.74,
   },
   {
     id: "pearl-oud",

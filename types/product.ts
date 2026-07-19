@@ -48,4 +48,8 @@ export interface Product {
   /** Whether the piece sways. Default true; set false for flat pieces (necklace,
    *  glasses) so a sway never foreshortens them toward an edge-on sliver. */
   animate?: boolean;
+  /** Per-piece brightness trim for GLB models (default 1). Values below 1 tone
+   *  the piece down against the shared stage lighting — used for pieces that
+   *  otherwise read too hot (e.g. a bright bag or glossy necklace). */
+  lightness?: number;
 }

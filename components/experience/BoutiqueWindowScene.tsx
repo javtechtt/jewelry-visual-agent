@@ -308,6 +308,7 @@ function CarouselCard({ product, x }: { product: Product; x: number }) {
             heroRotation={product.heroRotation}
             modelScale={product.modelScale}
             spin={product.animate ?? true}
+            lightness={product.lightness}
           />
         </group>
       </Float>

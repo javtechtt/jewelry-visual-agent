@@ -30,6 +30,8 @@ interface ProductObjectProps {
   modelScale?: number;
   /** Another piece is focused — dim this one slightly for separation. */
   dimmed?: boolean;
+  /** Per-piece brightness trim for the GLB model (default 1). */
+  lightness?: number;
 }
 
 // A gentle sway around the hero angle — a poised presentation with subtle life,
@@ -210,8 +212,9 @@ function CutoutPlane({ src }: { src: string }) {
 // world units) so arbitrary exports sit correctly on the panel.
 const MODEL_FIT_SIZE = 1.05;
 
-/** Real GLB/GLTF model — cloned, auto-centered and scaled to fit. */
-function ModelObject({ src }: { src: string }) {
+/** Real GLB/GLTF model — cloned, auto-centered and scaled to fit. `lightness`
+ *  (<1) tones the piece down against the shared stage lighting. */
+function ModelObject({ src, lightness = 1 }: { src: string; lightness?: number }) {
   const { scene } = useGLTF(src);
   const fitted = useMemo(() => {
     const root = scene.clone(true);
@@ -224,8 +227,31 @@ function ModelObject({ src }: { src: string }) {
     // Center the model on the group origin so it spins cleanly about its own
     // center (rather than swinging around an off-center pivot).
     root.position.set(-center.x * s, -center.y * s, -center.z * s);
+    // Per-piece brightness trim. Clone materials before mutating (scene.clone
+    // shares them by reference with the useGLTF cache) so we only dim THIS
+    // instance, scaling both the IBL response and the diffuse/specular albedo.
+    if (lightness !== 1) {
+      root.traverse((obj) => {
+        const mesh = obj as THREE.Mesh;
+        if (!mesh.isMesh || !mesh.material) return;
+        const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+        mesh.material = mats.map((m) => {
+          const c = m.clone() as THREE.Material & {
+            color?: THREE.Color;
+            envMapIntensity?: number;
+          };
+          if (c.color) c.color.multiplyScalar(lightness);
+          if (typeof c.envMapIntensity === "number") c.envMapIntensity *= lightness;
+          else c.envMapIntensity = lightness;
+          return c;
+        });
+        mesh.material = Array.isArray(mesh.material) && mesh.material.length === 1
+          ? mesh.material[0]
+          : mesh.material;
+      });
+    }
     return root;
-  }, [scene]);
+  }, [scene, lightness]);
   return <primitive object={fitted} />;
 }
 
@@ -255,6 +281,7 @@ export default function ProductObject({
   heroRotation = [0, 0, 0],
   modelScale = 1,
   dimmed = false,
+  lightness = 1,
 }: ProductObjectProps) {
   const groupRef = useRef<THREE.Group>(null);
   // Per-instance phase so the pieces don't sway in unison (client-only canvas).
@@ -317,7 +344,7 @@ export default function ProductObject({
       <ModelErrorBoundary fallback={imageOrShape}>
         <Suspense fallback={placeholder}>
           <group rotation={[heroRotation[0], heroRotation[1], heroRotation[2]]}>
-            <ModelObject src={model} />
+            <ModelObject src={model} lightness={lightness} />
           </group>
         </Suspense>
       </ModelErrorBoundary>

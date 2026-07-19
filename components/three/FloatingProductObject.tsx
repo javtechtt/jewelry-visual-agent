@@ -86,6 +86,7 @@ export default function FloatingProductObject({
               modelScale={product.modelScale}
               spin={product.animate ?? true}
               dimmed={dimmed}
+              lightness={product.lightness}
             />
           </group>
           {/* Only the hovered / selected piece shows its name, so long product
