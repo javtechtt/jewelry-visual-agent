@@ -51,9 +51,9 @@ export const PRODUCTS: Product[] = [
     shape: "ring",
     cutout: img("1605100804763-247f67b3557e"),
     model: "/models/products/jewelry.glb",
-    // Stand the (flat) loop up to face the camera, and hold it still so a sway
-    // never foreshortens it into a strip.
-    heroRotation: [1.5708, 0, 0],
+    // Stand the (flat) loop up, then tip + turn it to a 3/4 angle so it reads
+    // with depth instead of a flat horizontal strip. Held still (no sway).
+    heroRotation: [1.15, 0.5, 0.1],
     modelScale: 1.2,
     animate: false,
   },

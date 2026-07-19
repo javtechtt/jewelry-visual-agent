@@ -28,6 +28,11 @@ export default function LightRig() {
         shadow-camera-bottom={-8}
       />
       <directionalLight position={[-5, 3, -2]} intensity={0.5} color="#dce8ff" />
+      {/* Front "display" fill — lifts the pieces' camera-facing faces so they
+          read present against the ivory backdrop, WITHOUT re-brightening the
+          up-facing floor or the distant back wall (those catch it far less).
+          This is the counter to the graded-down look making dark pieces murky. */}
+      <directionalLight position={[0, 1.8, 7]} intensity={0.62} color="#fff2e0" />
       <spotLight
         position={[0, 5.5, 2.5]}
         angle={0.6}

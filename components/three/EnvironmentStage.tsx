@@ -78,7 +78,7 @@ export default function EnvironmentStage() {
           `environmentIntensity` is the one clean global dial for the image-based
           lighting (the renderer's toneMappingExposure is a no-op here: the
           EffectComposer forces NoToneMapping while it's mounted). */}
-      <Environment resolution={256} frames={1} environmentIntensity={0.82}>
+      <Environment resolution={256} frames={1} environmentIntensity={0.9}>
         <group>
           <Lightformer
             form="rect"
@@ -105,9 +105,11 @@ export default function EnvironmentStage() {
             rotation-y={-Math.PI / 4}
             scale={[7, 7, 1]}
           />
+          {/* Forward key ring — brought up so the pieces (which face the camera)
+              catch more specular sparkle without lifting the matte back wall. */}
           <Lightformer
             form="ring"
-            intensity={1.3}
+            intensity={1.7}
             color="#ffe7c2"
             position={[0, 3, 5]}
             scale={[3.4, 3.4, 1]}
