@@ -13,7 +13,7 @@ import { useReducedMotion } from "framer-motion";
 import { Float, Html } from "@react-three/drei";
 import * as THREE from "three";
 import { PRODUCTS } from "@/config/products";
-import { useExperienceStore } from "@/lib/stores/useExperienceStore";
+import { DUO_PAGE_COUNT, useExperienceStore } from "@/lib/stores/useExperienceStore";
 import { DUO_LAYOUT, getDuoSlot } from "@/config/scenes";
 import type { Product } from "@/types/product";
 import FloatingProductObject from "@/components/three/FloatingProductObject";
@@ -24,17 +24,35 @@ export default function BoutiqueWindowScene() {
   return view === "portrait" ? <BoutiqueCarousel /> : <BoutiqueDuo />;
 }
 
+// Seconds each pair holds before the selector auto-advances to the next.
+const DUO_AUTO_INTERVAL = 4.2;
+
 // --- Desktop / landscape: the two-up paged selector --------------------------
 // Only the current page's two pieces are ever mounted, so no more than two are
 // on screen at once. Turning the page swaps the pair with a quick scale-out →
 // swap → scale-in so the exchange reads as a deliberate "flip", never a pop.
+// At rest it auto-scrolls through the pairs (ping-ponging at the ends); focusing
+// a piece or a manual page turn pauses/resets the timer.
 function BoutiqueDuo() {
   const view = useExperienceStore((s) => s.view);
   const layout = DUO_LAYOUT[view];
   const duoPage = useExperienceStore((s) => s.duoPage);
+  const setDuoPage = useExperienceStore((s) => s.setDuoPage);
   const focused = useExperienceStore((s) => s.selectedProduct !== null);
   const clearSelectedProduct = useExperienceStore((s) => s.clearSelectedProduct);
   const reduced = useReducedMotion();
+
+  // Auto-scroll bookkeeping.
+  const autoRef = useRef(0); // seconds since the last automatic advance
+  const dirRef = useRef(1); // ping-pong direction through the pages
+
+  // Any page change (auto OR manual) restarts the dwell clock, so a manual pick
+  // always gets the full interval before the selector moves on its own.
+  useEffect(() => {
+    autoRef.current = 0;
+    if (duoPage >= DUO_PAGE_COUNT - 1) dirRef.current = -1;
+    else if (duoPage <= 0) dirRef.current = 1;
+  }, [duoPage]);
 
   // The pair currently mounted. Lags `duoPage` during the flip: we scale the old
   // pair out first, then adopt the new page, then scale the new pair in.
@@ -45,6 +63,27 @@ function BoutiqueDuo() {
   const phase = useRef<"idle" | "out" | "in">("idle");
 
   useFrame((_, delta) => {
+    // Auto-scroll the pairs at rest. Paused while a piece is focused or when the
+    // guest prefers reduced motion, and only ever fires between flips (idle).
+    if (!focused && !reduced && DUO_PAGE_COUNT > 1) {
+      autoRef.current += delta;
+      if (phase.current === "idle" && autoRef.current >= DUO_AUTO_INTERVAL) {
+        autoRef.current = 0;
+        const cur = useExperienceStore.getState().duoPage;
+        let next = cur + dirRef.current;
+        if (next > DUO_PAGE_COUNT - 1) {
+          next = DUO_PAGE_COUNT - 2;
+          dirRef.current = -1;
+        } else if (next < 0) {
+          next = 1;
+          dirRef.current = 1;
+        }
+        setDuoPage(next);
+      }
+    } else {
+      autoRef.current = 0;
+    }
+
     if (reduced) {
       // No flip animation — swap instantly and hold full scale.
       if (renderPage !== duoPage) setRenderPage(duoPage);
